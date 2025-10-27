@@ -53,6 +53,7 @@ const mapOptions = {
   fullscreenControl: false,
   draggableCursor: "grab",
 };
+
 const circleOptions = { fillOpacity: 0.15, strokeOpacity: 0.6 };
 const toMeters = (v, unit) => (unit === "KM" ? v * 1000 : v * 1609.34);
 
@@ -78,7 +79,7 @@ export default function ZoneDialog({
       company_Id: initialData?.company_Id || "",
       zone_name: initialData?.zone_name || "",
       radius_value: initialData?.radius_value ?? '',
-      radius_unit: initialData?.radius_unit || "KM",
+      radius_unit: initialData?.radius_unit || "MI",
       center: initialData?.center /* ||  { lat: 28.6139, lng: 77.209 }*/,
       lat: initialData?.center?.lat /* ?? 28.6139*/,
       lng: initialData?.center?.lng /* ?? 77.209*/,
@@ -121,10 +122,10 @@ export default function ZoneDialog({
     }
   }, []);
 
-  const authRaw = localStorage.getItem("auth");
-  const auth = authRaw ? JSON.parse(authRaw) : null;
+  // const authRaw = localStorage.getItem("auth");
+  // const auth = authRaw ? JSON.parse(authRaw) : null;
 
-  console.log('auth', auth?.user?.role);
+  // console.log('auth', auth);
 
 
   return (
@@ -273,8 +274,8 @@ export default function ZoneDialog({
                           setFieldValue("radius_unit", e.target.value)
                         }
                       >
-                        <MenuItem value="KM">KM</MenuItem>
                         <MenuItem value="MI">MI</MenuItem>
+                        <MenuItem value="KM">KM</MenuItem>
                       </Select>
                     </Grid2>
                   </Grid2>

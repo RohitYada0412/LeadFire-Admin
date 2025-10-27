@@ -1,7 +1,5 @@
-import * as React from 'react'
-import { useTheme, Card, CardContent, CardHeader, Box, Grid2 as Grid } from '@mui/material'
+import { Box, Card, CardContent, CardHeader, Grid2 as Grid, useTheme } from '@mui/material'
 import { BarChart } from '@mui/x-charts/BarChart'
-import { PieChart } from '@mui/x-charts/PieChart'
 import { LineChart } from '@mui/x-charts/LineChart'
 
 export default function AdminOverview() {
@@ -9,8 +7,8 @@ export default function AdminOverview() {
 
     // Colors from your theme
     const red = theme.palette.primary.main         // brand crimson
-    const green = theme.palette.success.main
-    const yellow = theme.palette.warning.main
+    // const green = theme.palette.success.main
+    // const yellow = theme.palette.warning.main
     const greyLine = theme.palette.grey[400]
 
     // --- Bar data: Issues by Company (last 30 days)
@@ -18,11 +16,11 @@ export default function AdminOverview() {
     const issuesCount = [22, 17, 31, 12, 18]
 
     // --- Pie data: Issue status breakdown
-    const statusData = [
-        { id: 0, value: 60, label: 'Resolved', color: green },
-        { id: 1, value: 30, label: 'Pending', color: yellow },
-        { id: 2, value: 10, label: 'Critical', color: red },
-    ]
+    // const statusData = [
+    //     { id: 0, value: 60, label: 'Resolved', color: green },
+    //     { id: 1, value: 30, label: 'Pending', color: yellow },
+    //     { id: 2, value: 10, label: 'Critical', color: red },
+    // ]
 
     // --- Line data: Agent activity trend
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -54,7 +52,7 @@ export default function AdminOverview() {
                     </Card>
                 </Grid>
 
-                <Grid item size={{ xs: 12, md: 6 }}>
+                {/* <Grid item size={{ xs: 12, md: 6 }}>
                     <Card variant='outlined' sx={{ height: '100%' }}>
                         <CardHeader title="Issue Status Breakdown" />
                         <CardContent>
@@ -80,9 +78,9 @@ export default function AdminOverview() {
                             />
                         </CardContent>
                     </Card>
-                </Grid>
+                </Grid> */}
 
-                <Grid item size={{ xs: 12, md: 12 }}>
+                <Grid item size={{ xs: 12, md: 6 }}>
                     <Card variant='outlined' sx={{ height: '100%' }}>
                         <CardHeader title="Agent Activity Trend" />
                         <CardContent>

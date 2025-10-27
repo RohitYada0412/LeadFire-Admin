@@ -69,7 +69,7 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 							<StyledTableCell>Company ID</StyledTableCell>
 							<StyledTableCell>Company</StyledTableCell>
 							<StyledTableCell>Email</StyledTableCell>
-							<StyledTableCell align="center">Zone</StyledTableCell>
+							{/* <StyledTableCell align="center">Zone</StyledTableCell> */}
 							<StyledTableCell align="center">Agents</StyledTableCell>
 							<StyledTableCell>Created Date</StyledTableCell>
 							<StyledTableCell>Status</StyledTableCell>
@@ -83,14 +83,14 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 							const labelId = `status-label-${r.id}`;
 							return (
 								<StyledTableRow key={r.id}>
-									<StyledTableCell>{r.id}</StyledTableCell>
+									<StyledTableCell>{r.companyIdFormatted}</StyledTableCell>
 									<StyledTableCell>
 										<Typography>{r.company_name}</Typography>
 									</StyledTableCell>
 									<StyledTableCell sx={{ wordBreak: 'break-all' }}>
 										{r.email}
 									</StyledTableCell>
-									<StyledTableCell align="center">{r.zonesCount ? r.zonesCount : 'N/A'}</StyledTableCell>
+									{/* <StyledTableCell align="center">{r.zonesCount ? r.zonesCount : 'N/A'}</StyledTableCell> */}
 									<StyledTableCell align="center">{r.agent_count ? r.agent_count : 0}</StyledTableCell>
 									<StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell>
 									<StyledTableCell>
@@ -106,18 +106,18 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 											>
 												<MenuItem value={1}>Active</MenuItem>
 												<MenuItem value={2}>Inactive</MenuItem>
-												<MenuItem value={3}>Pending</MenuItem>
+												<MenuItem value={3}>Archive</MenuItem>
 											</Select>
 										</FormControl>
 									</StyledTableCell>
 									<StyledTableCell align="right">
-										<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
+										<Button size="small" variant='outlined' color="error" sx={{ borderRadius: 0.5 }}
 											onClick={() => {
 												setOpen(true)
 												setCompanyId(r?.id)
 											}}
 										>
-											View Detail
+											Edit
 										</Button>
 									</StyledTableCell>
 								</StyledTableRow>

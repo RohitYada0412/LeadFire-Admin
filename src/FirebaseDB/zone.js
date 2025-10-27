@@ -6,14 +6,14 @@ import {
   doc,
   GeoPoint,
   getFirestore,
-   limit as qLimit,
   onSnapshot,
   orderBy,
+  limit as qLimit,
   query,
   serverTimestamp,
+  startAfter,
   updateDoc,
-  where,
-  startAfter
+  where
 } from "firebase/firestore";
 
 const db = getFirestore(getApp());
@@ -36,7 +36,7 @@ export function normalizeZone(input = {}) {
   const address = String(input.address ?? input.location ?? "").trim();
   const lat = toNum(input.lat ?? input.center?.lat);
   const lng = toNum(input.lng ?? input.center?.lng);
-  const status = toNum(input.status ?? input.status)??1;
+  const status = toNum(input.status ?? input.status) ?? 1;
   const radius_value = toNum(
     input.radius_value ?? input.radiusValue,
     0
@@ -56,7 +56,7 @@ export function normalizeZone(input = {}) {
     lng,
     status,
     radius_value,
-    radius_unit,     
+    radius_unit,
     company_Id,
     radius_meters:
       radius_unit === "km"
@@ -82,59 +82,226 @@ export async function createZone(input) {
 
 export async function updateZone(id, input) {
   const payload = normalizeZone(input);
+
+  console.log('pay', payload);
+
+
   await updateDoc(doc(db, "zones", id), payload);
   return id;
 }
 
-/** Live list with optional filters */
-export function listZones(params,onData,onError, cursor = null,) {
-  // const filters = [collection(db, "zones")];
-const colRef = collection(getFirestore() || db, "zones");
+
+
+// export function listZones(params, onData, onError, cursor = null) {
+//   const db = getFirestore();
+//   const colRef = collection(db, "zones");
+//   const constraints = [];
+
+//   // filters
+//   if (params?.company_id) constraints.push(where("company_Id", "==", params.company_id));
+//   if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
+
+//   // search / sort
+//   const hasSearch = !!(params?.search && params.search.trim());
+//   if (hasSearch) {
+//     const s = params.search;
+
+//     console.log('s :- ', s);
+
+
+
+//     constraints.push(orderBy("zone_name", "asc"));
+//     constraints.push(where("zone_name", ">=", s));
+//     constraints.push(where("zone_name", "<=", s + "\uf8ff"));
+
+//     constraints.push(orderBy("company_name", "asc"));
+//     constraints.push(where("company_name", ">=", s));
+//     constraints.push(where("company_name", "<=", s + "\uf8ff"));
+//   } else {
+//     constraints.push(orderBy("createdAt", "desc"));
+//   }
+
+//   if (cursor) constraints.push(startAfter(cursor));
+//   if (params?.limitBy) constraints.push(qLimit(params.limitBy));
+
+//   const q = query(colRef, ...constraints);
+
+//   // --- join helpers: company listeners + cache ---
+//   const companyUnsubs = new Map(); // companyId -> unsubscribe fn
+//   const companyCache = new Map();  // companyId -> { company_name, ... }
+//   let zones = [];                  // latest zones snapshot
+
+//   const emit = () => {
+//     const rows = zones.map((z) => ({
+//       ...z,
+//       company_name: companyCache.get(z.company_Id)?.company_name || null,
+//     }));
+//     const nextCursor = zones.length ? zones[zones.length - 1]._snap : null;
+//     onData(rows, nextCursor);
+//   };
+
+//   // main zones listener
+//   const unsubZones = onSnapshot(
+//     q,
+//     (snap) => {
+//       // build zones list
+//       zones = snap.docs.map((d) => ({ id: d.id, _snap: d, ...d.data() }));
+
+//       // figure out which company IDs we need live
+//       const needed = new Set(zones.map((z) => z.company_Id).filter(Boolean));
+
+//       // unsubscribe companies we no longer need
+//       for (const [cid, fn] of companyUnsubs.entries()) {
+//         if (!needed.has(cid)) {
+//           try { fn(); } catch { }
+//           companyUnsubs.delete(cid);
+//           companyCache.delete(cid);
+//         }
+//       }
+
+//       // subscribe to any new company IDs
+//       for (const cid of needed) {
+//         if (!companyUnsubs.has(cid)) {
+//           const ref = doc(db, "companies", cid);
+//           const unsubCompany = onSnapshot(
+//             ref,
+//             (cSnap) => {
+//               if (cSnap.exists()) {
+//                 companyCache.set(cid, cSnap.data());
+//               } else {
+//                 companyCache.delete(cid);
+//               }
+//               emit(); // update rows when company name changes
+//             },
+//             (err) => console.error("Company join error:", err)
+//           );
+//           companyUnsubs.set(cid, unsubCompany);
+//         }
+//       }
+
+//       emit(); // initial emit after zones update
+//     },
+//     (err) => (onError ? onError(err) : console.error("Zones listener error:", err))
+//   );
+
+//   // cleanup
+//   return () => {
+//     try { unsubZones(); } catch { }
+//     for (const fn of companyUnsubs.values()) { try { fn(); } catch { } }
+//     companyUnsubs.clear();
+//     companyCache.clear();
+//   };
+// }
+
+
+
+// *********************************************************************************
+
+function buildZoneWrite(data) {
+  const zone_name_lc = (data.zone_name || "").toLowerCase();
+  const company_name_lc = (data.company_name || "").toLowerCase();
+  return {
+    ...data,
+    zone_name_lc,
+    company_name_lc,
+    search_blob: `${zone_name_lc} ${company_name_lc}`,
+    updatedAt: serverTimestamp(),
+  };
+}
+
+
+
+// *********************************************************************************
+
+
+
+
+export function listZones(params, onData, onError, cursor = null) {
+  const db = getFirestore();
+  const colRef = collection(db, "zones");
   const constraints = [];
 
-  let didApplySearch = false;
+  // filters
+  if (params?.company_id) constraints.push(where("company_Id", "==", params.company_id));
+  if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
 
-  if (params.search && params.search.trim()) {
-    const s = params.search.trim();
-    constraints.push(where("zone_name", ">=", s));
-    constraints.push(where("zone_name", "<=", s + "\uf8ff"));
-    constraints.push(orderBy("zone_name", "asc"));
-    didApplySearch = true
-  }
-  if (!didApplySearch) {
+  // search / sort
+  const hasSearch = !!(params?.search && params.search.trim());
+  if (hasSearch) {
+    const s = params.search.trim().toLowerCase();
+
+    // SINGLE field for the range + first orderBy must match that field
+    constraints.push(orderBy("search_blob", "asc"));
+    constraints.push(where("search_blob", ">=", s));
+    constraints.push(where("search_blob", "<=", s + "\uf8ff"));
+  } else {
     constraints.push(orderBy("createdAt", "desc"));
   }
 
-  if (params.limitBy) {
-    constraints.push(qLimit(params.limitBy));
-  }
+  if (cursor) constraints.push(startAfter(cursor));
+  if (params?.limitBy) constraints.push(qLimit(params.limitBy));
 
-    if (cursor != null) {
-      constraints.push(startAfter(cursor));
-    }
-    const q = query(colRef, ...constraints);
-  return onSnapshot(
+  const q = query(colRef, ...constraints);
+
+  // --- join helpers: company listeners + cache (unchanged) ---
+  const companyUnsubs = new Map();
+  const companyCache = new Map();
+  let zones = [];
+
+  const emit = () => {
+    const rows = zones.map((z) => ({
+      ...z,
+      // you already store company_name in the zone doc; if you still want live joins, keep this:
+      company_name: companyCache.get(z.company_Id)?.company_name ?? z.company_name ?? null,
+    }));
+    const nextCursor = zones.length ? zones[zones.length - 1]._snap : null;
+    onData(rows, nextCursor);
+  };
+
+  const unsubZones = onSnapshot(
     q,
     (snap) => {
+      zones = snap.docs.map((d) => ({ id: d.id, _snap: d, ...d.data() }));
 
-      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      const nextCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;     
-      onData(rows, nextCursor);
+      // live company-name join (optional if you trust the denormalized company_name)
+      const needed = new Set(zones.map((z) => z.company_Id).filter(Boolean));
+      for (const [cid, fn] of companyUnsubs.entries()) {
+        if (!needed.has(cid)) { try { fn(); } catch { } companyUnsubs.delete(cid); companyCache.delete(cid); }
+      }
+      for (const cid of needed) {
+        if (!companyUnsubs.has(cid)) {
+          const ref = doc(db, "companies", cid);
+          const unsubCompany = onSnapshot(
+            ref,
+            (cSnap) => { cSnap.exists() ? companyCache.set(cid, cSnap.data()) : companyCache.delete(cid); emit(); },
+            (err) => console.error("Company join error:", err)
+          );
+          companyUnsubs.set(cid, unsubCompany);
+        }
+      }
+
+      emit();
     },
-    (err) => {
-      if (onError) onError(err);
-      else console.error("Agents listener error:", err);
-    }
+    (err) => (onError ? onError(err) : console.error("Zones listener error:", err))
   );
 
-  // if (params?.unit) filters.push(where("radius_unit", "==", toUnit(params.unit))); // e.g. "km"
-  // if (typeof params?.minRadius === "number")
-  //   filters.push(where("radius_value", ">=", params.minRadius));
-  // filters.push(orderBy("createdAt", "desc"));
- 
-  // if (params?.limitBy) filters.push(limit(params.limitBy));
-  // const qRef = query(...filters);
-  // return onSnapshot(qRef, (snap) =>
-  //   cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-  // );
+  return () => {
+    try { unsubZones(); } catch { }
+    for (const fn of companyUnsubs.values()) { try { fn(); } catch { } }
+    companyUnsubs.clear();
+    companyCache.clear();
+  };
 }
+
+
+// ************************************************************************************
+export async function updateZoneStatus(zoneId, nextStatus) {
+  // Only update the fields you want to change
+  await updateDoc(doc(db, "zones", zoneId), {
+    status: nextStatus,
+    updatedAt: serverTimestamp(), // optional, but useful
+  });
+}
+
+
+// ************************************************************************************

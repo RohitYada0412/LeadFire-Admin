@@ -9,13 +9,15 @@ import { toast } from "react-toastify";
 import { auth } from "../firebase";
 import { imageURL } from "../utils/images";
 
-const VERIFY_WINDOW_SECONDS = 600; // 10 minutes
-const POLL_MS = 5000;              // check every 5s
-const TICK_MS = 250;               // smoother clock; resilient to throttling
-const RESEND_COOLDOWN = 30;        // (not shown)
+const VERIFY_WINDOW_SECONDS = 600;
+const POLL_MS = 5000;
+const TICK_MS = 250;
+const RESEND_COOLDOWN = 30;
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
+
+  let loacl = localStorage.getItem("user-auth")
 
   // store target end time in a ref; compute secondsLeft from it
   const endAtRef = useRef(Date.now() + VERIFY_WINDOW_SECONDS * 1000);
@@ -43,14 +45,12 @@ export default function VerifyEmail() {
     Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000));
 
   useEffect(() => {
-    // StrictMode in dev runs effects twice — prevent double timers
-    console.log('Hello');
 
     if (startedRef.current) return;
     startedRef.current = true;
 
     (async () => {
-      const user = auth.currentUser;
+      const user = auth.currentUser ? auth.currentUser : JSON.parse(loacl);
       if (!user) {
         toast.error("No signed-in user. Please log in again.");
         return;
@@ -90,7 +90,7 @@ export default function VerifyEmail() {
     // Poll for verification
     pollRef.current = setInterval(async () => {
       const user = auth.currentUser;
-      console.log('user :- ', user);
+
 
       if (!user) return;
       await user.reload();
@@ -103,20 +103,16 @@ export default function VerifyEmail() {
 
   async function handleSend() {
     try {
-      const user = auth.currentUser;
+
+      const user = auth.currentUser ? auth.currentUser : JSON.parse(loacl);
       if (!user) {
         toast.error("No signed-in user.");
         return;
       }
 
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/reset-password`,
-        handleCodeInApp: true,
-      });
-
+      await sendEmailVerification(user);
       toast.info(`Verification link sent to ${user.email}`);
 
-      // reset the window and immediately sync the display
       endAtRef.current = Date.now() + VERIFY_WINDOW_SECONDS * 1000;
       setSecondsLeft(calcSecondsLeft());
     } catch (e) {

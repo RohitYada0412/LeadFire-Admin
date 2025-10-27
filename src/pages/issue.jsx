@@ -1,46 +1,77 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { Button, FormControl, Grid2, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
+import { Grid2, InputAdornment, TextField } from "@mui/material";
 import Iconify from "../components/common/iconify/Iconify";
 
 import { useSelector } from "react-redux";
 import IssuesTable from "../components/Issues/IssuesComponent";
-import ZoneDialog from "../components/zone/AddNew";
 import { getCompanyById, updateCompany } from "../FirebaseDB/companies";
-import { listIssues } from "../FirebaseDB/issues";
+import { listenObservationById, listIssues } from "../FirebaseDB/issues";
+import IssueSummaryDialog from "./IssueSummaryDialog";
+import IssueSummarySkeletonDialog from "../components/common/IssueSummarySkeletonDialog";
 
 const Issues = () => {
 
 	const { isUser } = useSelector((state) => state.auth)
 
 	const [open, setOpen] = useState(false);
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false);
+	const [loadingId, setLoadingId] = useState(false);
 	const [rows, setRows] = useState([])
-	const [filterData, setFilterData] = useState({
-		status: 0,
-		zone: 0
-	})
+	const [rowsById, setRowsById] = useState({})
+	const [filterData, setFilterData] = useState({})
+	const [openViewIssueId, setOpenViewIssueId] = useState(null)
 
-	const [initialData, setInitialData] = useState({
-		company_name: 'admin',
-		zone_name: '',
-		address: '',
-		lat: '',
-		lng: "",
-		radius_value: '',
-		radius_unit: '' // km mi
-	})
+	// const [initialData, setInitialData] = useState({
+	// 	company_name: 'admin',
+	// 	zone_name: '',
+	// 	address: '',
+	// 	lat: '',
+	// 	lng: "",
+	// 	radius_value: '',
+	// 	radius_unit: '' // km mi
+	// })
 	const [companyId, setCompanyId] = useState('')
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 
-	const handleClickOpen = () => setOpen(true);
+
+	const PAGE_SIZE = 50;
+
+
+	const agentParams = useMemo(() => {
+		const authRaw = localStorage.getItem("auth");
+		const auth = authRaw ? JSON.parse(authRaw) : null;
+
+		const companyIdFromAuth =
+			auth?.user?.role !== "admin" && auth?.user?.uid
+				? String(auth.user.uid)
+				: null;
+
+		const p = { limitBy: PAGE_SIZE };
+
+		if (companyIdFromAuth) p.company_id = companyIdFromAuth;
+
+		if (debouncedSearch) p.search = debouncedSearch;
+
+		return p;
+	}, [filterData.status, filterData.zone, debouncedSearch]);
 
 	useEffect(() => {
-		const unsub = listIssues({ limitBy: 50 }, (docs) => {
+		const id = setTimeout(
+			() => setDebouncedSearch(filterData?.search),
+			250
+		);
+		return () => clearTimeout(id);
+	}, [filterData.search]);
+
+	useEffect(() => {
+		setLoading(true);
+		const unsub = listIssues(agentParams, (docs) => {
 			setRows(docs);
 			setLoading(false);
 		});
 		return () => unsub();
-	}, []);
+	}, [debouncedSearch, filterData]);
 
 
 	const handleSelect = async (id, nextStatus) => {
@@ -61,17 +92,17 @@ const Issues = () => {
 	};
 
 	useEffect(() => {
-		if (open && companyId) {
-			getCompanyById(companyId).then((companyDetail) => {
-				console.log('companyDetail', companyDetail);
-				setInitialData(companyDetail)
 
-			})
+		if (companyId) {
+			setLoadingId(true)
+			const unsub = listenObservationById(companyId, (docs) => {
+				setRowsById(docs);
+				setLoadingId(false);
+			});
+			return () => unsub();
 		}
-	}, [companyId, open])
+	}, [companyId])
 
-		console.log('row',rows);
-	
 
 	return (
 		<React.Fragment>
@@ -83,6 +114,12 @@ const Issues = () => {
 						placeholder="Search…"
 						variant="outlined"
 						size="small"
+						onChange={(e) =>
+							setFilterData((prev) => ({
+								...prev,
+								search: e.target.value,
+							}))
+						}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
@@ -91,69 +128,6 @@ const Issues = () => {
 							),
 						}}
 					/>
-				</Grid2>
-
-				{/* Right side: Filters + Button */}
-				<Grid2
-					size={{ xs: 12, md: 6 }}
-					container
-					justifyContent="flex-end"
-					alignItems="center"
-					spacing={1}
-				>
-					{/* <Grid2>
-						<FormControl size="small">
-							<Select
-								value={filterData.zone}
-								onChange={(e) => {
-									setFilterData((prev) => ({
-										...prev,
-										zone: e.target.value,
-									}));
-								}}
-							>
-								<MenuItem value={0} disabled>
-									All Zone
-								</MenuItem>
-								<MenuItem value={1}>Zone 1</MenuItem>
-								<MenuItem value={2}>Zone 2</MenuItem>
-								<MenuItem value={3}>Zone 3</MenuItem>
-							</Select>
-						</FormControl>
-					</Grid2> */}
-
-					<Grid2>
-						<FormControl size="small">
-							<Select
-								value={filterData.status}
-								onChange={(e) => {
-									setFilterData((prev) => ({
-										...prev,
-										status: e.target.value,
-									}));
-								}}
-							>
-								<MenuItem value={0} disabled>
-									All Status
-								</MenuItem>
-								<MenuItem value={1}>Active</MenuItem>
-								<MenuItem value={2}>Inactive</MenuItem>
-								<MenuItem value={3}>Pending</MenuItem>
-							</Select>
-						</FormControl>
-					</Grid2>
-
-					{/* {isUser && <Grid2>
-						<Button
-							variant="contained"
-							color="error"
-							onClick={handleClickOpen}
-							sx={{ borderRadius: 0.8 }}
-							size="small"
-						>
-							+ Add New Zone
-						</Button>
-					</Grid2>} */}
 				</Grid2>
 			</Grid2>
 
@@ -166,26 +140,27 @@ const Issues = () => {
 				isUser={isUser}
 			/>
 
-			{open &&
-				<ZoneDialog
+
+
+			{loadingId ?
+				<IssueSummarySkeletonDialog
 					open={open}
-					handleClose={() => setOpen(false)}
-					initialData={initialData}
-					companyId={companyId}
-					setInitialData={setInitialData}
-					setCompanyId={setCompanyId}
 					onClose={() => setOpen(false)}
-
-					onSubmitZone={(z) => {
-						console.log('z :-', z);
-						// z = { name, location, center:{lat,lng}, radiusValue, radiusUnit, radiusMeters }
-						// -> create or update in Firestore as you like
-						// e.g. createZone(z) or updateZone(id, z)
-					}}
-
+					setId={setOpenViewIssueId}
+					issue={rowsById}
+					Id={openViewIssueId}
+					loading={loadingId}
+				/>
+				:
+				<IssueSummaryDialog
+					open={open}
+					onClose={() => setOpen(false)}
+					setId={setOpenViewIssueId}
+					issue={rowsById}
+					Id={openViewIssueId}
+					loading={loadingId}
 				/>
 			}
-
 
 		</React.Fragment>
 	)

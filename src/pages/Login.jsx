@@ -196,6 +196,7 @@ export default function Login() {
 
 												if (user1.emailVerified === true) {
 													await bumpCompanyLogin(user.uid, user.email || values.email);
+
 													dispatch(setUser({
 														uid: user.uid, email: user.email,
 														role, profile,
@@ -208,7 +209,7 @@ export default function Login() {
 												} else {
 													navigate("/finish-sign-in", { replace: true });
 												}
-											} else {
+											} else if (role == "admin") {
 												dispatch(setUser({
 													uid: user.uid, email: user.email,
 													role, profile,

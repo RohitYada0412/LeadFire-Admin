@@ -1,18 +1,17 @@
 import { useLocation } from "react-router-dom";
 
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import {
   AppBar,
-  Badge,
   Box,
   IconButton,
+  Stack,
   Toolbar,
-  Typography,
+  Typography
 } from "@mui/material";
 
 import { styled } from "@mui/material/styles";
-import { filter, get } from "lodash";
+import { filter } from "lodash";
 
 export const StyledTableCell = styled("tr")(({ theme }) => ({
   padding: "8px",
@@ -44,10 +43,8 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 
 const Header = ({ open, setOpen }) => {
   const location = useLocation();
-  // const dispatch = useDispatch();
-  // const dispatch = useDispatch();
 
-  const handleNotificationClick = () => { };
+  const auth = JSON.parse(localStorage.getItem('auth'))
 
   const headingList = [
     { path: '/', label: "Dashboard" },
@@ -57,6 +54,9 @@ const Header = ({ open, setOpen }) => {
   const headingContent = filter(headingList, (item) => {
     return item.path === location.pathname;
   });
+
+  // console.log('profile', profile);
+
 
   return (
     <>
@@ -71,28 +71,31 @@ const Header = ({ open, setOpen }) => {
               border: "none",
             }}
           >
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={() => setOpen(true)}
-              sx={{ display: { lg: "none" } }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography
-              variant="h3"
-              sx={{ fontWeight: 500, fontSize: "26px", marginLeft: 2 }}
-              color="text.primary"
-            >
-              {get(headingContent, "[0].label", "")}
-            </Typography>
+            <Stack direction='row'>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={() => setOpen(true)}
+                sx={{ display: { lg: "none" } }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Typography
+                variant="h3"
+                sx={{ fontWeight: 500, fontSize: "26px", marginLeft: 2 }}
+                color="text.primary"
+              >
+                {/* {get(headingContent, "[0].label", "")} */}
 
-            {headingContent.length > 0 &&
-              headingContent[0].path !== "/app/notification" && (
-                ''
-              )}
-            <IconButton
+                {auth?.role === 'admin' ? "Super admin" : 'Company'}
+              </Typography>
+
+              {headingContent.length > 0 &&
+                headingContent[0].path !== "/app/notification" && (
+                  ''
+                )}
+              {/* <IconButton
               color="inherit"
               aria-label="notification"
               onClick={handleNotificationClick}
@@ -104,7 +107,9 @@ const Header = ({ open, setOpen }) => {
               >
                 <NotificationsIcon />
               </Badge>
-            </IconButton>
+            </IconButton> */}
+
+            </Stack>
           </Box>
         </StyledToolbar>
       </StyledRoot>

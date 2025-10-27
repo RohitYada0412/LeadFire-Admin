@@ -19,6 +19,7 @@ import {
 import { styled } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../utils/service';
+import { useNavigate } from 'react-router-dom';
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -48,7 +49,8 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 export default function AgentTable({
 	data, setStatus, setCompanyId, setOpen, isUser, page = 1, hasMore = false, onPrev, onNext, loading = false
 }) {
-	const safeRows = Array.isArray(data) ? data : []; // ✅ extra guard
+	const safeRows = Array.isArray(data) ? data : [];
+	const navigate = useNavigate()
 
 	return (
 		<Box>
@@ -69,7 +71,7 @@ export default function AgentTable({
 							<StyledTableCell>Agent Name</StyledTableCell>
 							<StyledTableCell>Email</StyledTableCell>
 							<StyledTableCell align="center">Zone</StyledTableCell>
-							<StyledTableCell align="center">Agents ID</StyledTableCell>
+							{/* <StyledTableCell align="center">Agents ID</StyledTableCell> */}
 							<StyledTableCell>Date Joined</StyledTableCell>
 							<StyledTableCell>Status</StyledTableCell>
 							{isUser && <StyledTableCell align="right">Actions</StyledTableCell>}
@@ -90,14 +92,12 @@ export default function AgentTable({
 											</Typography>
 										</Stack>
 									</StyledTableCell>
-									{/* <StyledTableCell>
-										<Typography>{r.company_name}</Typography>
-									</StyledTableCell> */}
+
 									<StyledTableCell sx={{ wordBreak: 'break-all' }}>
 										{r.email}
 									</StyledTableCell>
 									<StyledTableCell align="center">{r.zone?.length > 0 ? r.zone.length : 'N/A'}</StyledTableCell>
-									<StyledTableCell align="center">{r.id}</StyledTableCell>
+									{/* <StyledTableCell align="center">{r.agentIdFormatted}</StyledTableCell> */}
 									<StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell>
 									<StyledTableCell>
 										<FormControl size="small" sx={{ m: 1 }}>
@@ -112,19 +112,34 @@ export default function AgentTable({
 											>
 												<MenuItem value={1}>Active</MenuItem>
 												<MenuItem value={2}>Inactive</MenuItem>
-												<MenuItem value={3}>Pending</MenuItem>
+												{/* <MenuItem value={3}>Pending</MenuItem> */}
 											</Select>
 										</FormControl>
 									</StyledTableCell>
 									{isUser && <StyledTableCell align="right">
-										<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
-											onClick={() => {
-												setOpen(true)
-												setCompanyId(r?.id)
-											}}
-										>
-											View Detail
-										</Button>
+										<Stack direction='row' spacing={2}>
+											<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
+												onClick={() => {
+													setOpen(true)
+													setCompanyId(r?.id)
+
+													// navigate(`/agents/${r?.id}`)
+												}}
+											>
+												Edit
+											</Button>
+											<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
+												onClick={() => {
+													// setOpen(true)
+													// setCompanyId(r?.id)
+
+													navigate(`/agents/${r?.id}`)
+												}}
+											>
+												View Detail
+											</Button>
+
+										</Stack>
 									</StyledTableCell>}
 								</StyledTableRow>
 							)
@@ -174,7 +189,11 @@ export default function AgentTable({
 								size="small"
 								variant="contained"
 								color="error"
-								onClick={() => { setOpen(true); setCompanyId(r?.id); }}
+								onClick={() => {
+									// setOpen(true); setCompanyId(r?.id);
+									navigate(`agents/${r?.id}`)
+
+								}}
 							>
 								View Detail
 							</Button>

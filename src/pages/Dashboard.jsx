@@ -46,14 +46,14 @@ export default function Dashboard() {
   return (
     <Box SX={{ backgroundColor: '#FFF' }}>
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, md: 3 }}>
+        {/* <Grid size={{ xs: 12, md: 3 }}>
           <StatCard
             label="Total Zones"
             value={250}
             icon={''}
             actionIcon={''}
           />
-        </Grid>
+        </Grid> */}
         <Grid size={{ xs: 12, md: 3 }}>
           <StatCard
             label="Total Agents"
@@ -70,14 +70,14 @@ export default function Dashboard() {
             actionIcon={''}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
+        {/* <Grid size={{ xs: 12, md: 3 }}>
           <StatCard
             label="Open Issue"
             value={250}
             icon={''}
             actionIcon={''}
           />
-        </Grid>
+        </Grid> */}
       </Grid>
       <AdminOverview />
 

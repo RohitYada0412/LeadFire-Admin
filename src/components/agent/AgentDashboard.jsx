@@ -1,5 +1,4 @@
 // AgentDashboard.jsx
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
@@ -9,6 +8,7 @@ import {
 	Card,
 	Chip,
 	Divider,
+	IconButton,
 	ListItemIcon,
 	ListItemText,
 	Menu,
@@ -24,45 +24,51 @@ import {
 	Typography
 } from '@mui/material';
 import * as React from 'react';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { getAgentWithObservations } from '../../FirebaseDB/agent';
+import { formatTimestamp } from '../../utils/service';
+import { useEffect } from 'react';
+import Iconify from '../common/iconify/Iconify';
 
-const mock = {
-	agent: {
-		name: 'John Doe',
-		email: 'john.doe@leadfire.com',
-		avatar:
-			'https://i.pravatar.cc/80?img=5', // swap for your asset
-		id: 'AG001',
-		joined: '2023-12-15',
-		status: 'Active',
-	},
-	zones: [
-		{
-			name: 'Evergreen Office Park - Zone A',
-			assigned: 'Feb 15, 2025',
-			radius: '15 km',
-			issuesCount: 12,
-			issues: [
-				{
-					id: '#2541',
-					title: 'john.smith@leadfire.com',
-					date: 'Jan 28, 2025',
-				},
-				{
-					id: '#2541',
-					title: 'sarah.johnson@leadfire.com',
-					date: 'Jan 28, 2025',
-				},
-			],
-		},
-		{
-			name: 'Downtown Plaza - Zone B',
-			assigned: 'Jan 10, 2025',
-			radius: '20 km',
-			issuesCount: 12,
-			issues: [],
-		},
-	],
-};
+// const mock = {
+// 	agent: {
+// 		name: 'John Doe',
+// 		email: 'john.doe@leadfire.com',
+// 		avatar:
+// 			'https://i.pravatar.cc/80?img=5', // swap for your asset
+// 		id: 'AG001',
+// 		joined: '2023-12-15',
+// 		status: 'Active',
+// 	},
+// 	zones: [
+// 		{
+// 			name: 'Evergreen Office Park - Zone A',
+// 			assigned: 'Feb 15, 2025',
+// 			radius: '15 km',
+// 			issuesCount: 12,
+// 			issues: [
+// 				{
+// 					id: '#2541',
+// 					title: 'john.smith@leadfire.com',
+// 					date: 'Jan 28, 2025',
+// 				},
+// 				{
+// 					id: '#2541',
+// 					title: 'sarah.johnson@leadfire.com',
+// 					date: 'Jan 28, 2025',
+// 				},
+// 			],
+// 		},
+// 		{
+// 			name: 'Downtown Plaza - Zone B',
+// 			assigned: 'Jan 10, 2025',
+// 			radius: '20 km',
+// 			issuesCount: 12,
+// 			issues: [],
+// 		},
+// 	],
+// };
 
 function IssuesMenuButton({ count = 0 }) {
 	const [anchorEl, setAnchorEl] = React.useState(null);
@@ -102,19 +108,24 @@ function IssuesMenuButton({ count = 0 }) {
 	);
 }
 
-function ZoneCard({ zone }) {
-	const hasIssues = zone.issues && zone.issues.length > 0;
+function ZoneCard({ zone, index }) {
+	const hasIssues = zone.observations
+		&& zone.observations
+			.length > 0;
+
+	console.log('zone', zone);
+
 
 	return (
 		<Paper variant="outlined" sx={{ p: 2, borderRadius: .5 }}>
 			<Stack direction="row" alignItems="center" justifyContent="space-between">
 				<Box>
-					<Typography fontWeight={600}>{zone.name}</Typography>
+					<Typography fontWeight={600}>{zone?.zones[index]?.zone_name}</Typography>
 					<Typography variant="body2" color="text.secondary">
-						Assigned: {zone.assigned} · Radius: {zone.radius}
+						Assigned: {formatTimestamp(zone?.zones[index]?.createdAt)} · Radius: {zone?.zones[index]?.radius_meters}
 					</Typography>
 				</Box>
-				<IssuesMenuButton count={zone.issuesCount} />
+				<IssuesMenuButton count={zone.observationsCount} />
 			</Stack>
 
 			{hasIssues && (
@@ -131,29 +142,39 @@ function ZoneCard({ zone }) {
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{zone.issues.map((i, idx) => (
-								<TableRow key={idx} hover>
-									<TableCell>{i.id}</TableCell>
-									<TableCell>{i.title}</TableCell>
-									<TableCell>{i.date}</TableCell>
-									<TableCell align="right">
-										<Button
-											size="small"
-											variant="contained"
-											disableElevation
-											endIcon={<VisibilityOutlinedIcon />}
-											sx={{
-												textTransform: 'none',
-												borderRadius: 999,
-												bgcolor: (t) => t.palette.error.main,
-												'&:hover': { bgcolor: (t) => t.palette.error.dark },
-											}}
-										>
-											View Detail
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
+							{zone.observations
+								?.map((i, idx) => (
+									<TableRow key={idx} hover>
+										<TableCell>{i.id}</TableCell>
+										<TableCell>
+											<Box>
+												{i?.issueType.map((it, i) => (
+													<Typography key={`${i.id}-${idx}`} variant="body2">
+														{it},
+													</Typography>
+												))}
+
+											</Box>
+										</TableCell>
+										<TableCell>{i.createdAt}</TableCell>
+										<TableCell align="right">
+											<Button
+												size="small"
+												variant="contained"
+												disableElevation
+												endIcon={<VisibilityOutlinedIcon />}
+												sx={{
+													textTransform: 'none',
+													borderRadius: 999,
+													bgcolor: (t) => t.palette.error.main,
+													'&:hover': { bgcolor: (t) => t.palette.error.dark },
+												}}
+											>
+												View Detail
+											</Button>
+										</TableCell>
+									</TableRow>
+								))}
 						</TableBody>
 					</Table>
 				</TableContainer>
@@ -163,54 +184,96 @@ function ZoneCard({ zone }) {
 }
 
 export default function AgentDashboard() {
-	const { agent, zones } = mock;
+	const [rowData, setRowData] = useState({})
+
+	const { id } = useParams()
+
+	useEffect(() => {
+		if (id) {
+			getAgentWithObservations(id).then((companyDetail) => {
+				console.log('companyDetail', companyDetail);
+				if (companyDetail) {
+					setRowData(companyDetail)
+				}
+
+				// setInitialData({
+				// 	...initialData,
+				// 	company_name: companyDetail?.company_name
+				// })
+
+			})
+		}
+	}, [id])
+
+	// console.log('rowData :- ', rowData?.email);
+
+
 
 	return (
 		<Box>
 			<Card variant="outlined" sx={{ p: 2, borderRadius: 0.5, mb: 2 }}>
 				<Stack direction="row" alignItems="center" spacing={2} justifyContent="space-between">
 					<Stack direction="row" spacing={2} alignItems="center">
-						<Avatar src={agent.avatar} alt={agent.name} sx={{ width: 48, height: 48 }} />
+						<Avatar src={rowData?.avatar} alt={rowData?.agent_name} sx={{ width: 48, height: 48 }} />
 						<Box>
-							<Typography fontWeight={700}>{agent.name}</Typography>
+							<Typography fontWeight={700}>{rowData?.agent_name}</Typography>
 							<Typography variant="body2" color="text.secondary">
-								{agent.email}
+								{rowData.email}
 							</Typography>
 						</Box>
 					</Stack>
 
 					<Box sx={{ textAlign: 'right' }}>
 						<Typography variant="body2" color="text.secondary">
-							Agent ID : <Typography component="span" color="text.primary"> {agent.id}</Typography>
+							Agent ID : <Typography component="span" color="text.primary"> {rowData?.id}</Typography>
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
-							Date Joined : <Typography component="span" color="text.primary"> {agent.joined}</Typography>
+							Date Joined : <Typography component="span" color="text.primary"> {formatTimestamp(rowData?.createdAt)}</Typography>
 						</Typography>
 					</Box>
 
-					<Chip
-						color="success"
-						variant="outlined"
-						icon={<CheckCircleOutlineIcon />}
-						label={agent.status}
-						sx={{
-							borderRadius: 999,
-							fontWeight: 600,
-						}}
-					/>
+					<Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+						{/* <Button
+							variant="outlined"
+							size="small"
+							startIcon={<Iconify icon="iconamoon:edit" />}
+							// onClick={() =>}
+							sx={{
+								borderRadius: 0.5,
+								// borderColor: "divider",      // use theme divider color
+								textTransform: "none",       // keep normal text
+								fontWeight: 500,
+								color: 'text.secondary',
+							}}
+						>
+							Edit
+						</Button> */}
+						<Chip
+							color="success"
+							variant="outlined"
+							size='medium'
+							label={rowData?.status == 1 ? 'Active' : 'Inactive'}
+							// icon={ }
+							// endIcon={< CheckCircleOutlineIcon />}
+							sx={{
+								borderRadius: 999,
+								fontWeight: 600,
+							}}
+						/>
+					</Stack>
 				</Stack>
 			</Card>
 
 
 			<Card variant="outlined" sx={{ borderRadius: 0.5, mb: 2 }}>
-				<Typography variant="h5" sx={{ px:1.8,py:2, mb: 1.5 }}>
+				<Typography variant="h5" sx={{ px: 1.8, py: 2, mb: 1.5 }}>
 					Assigned Zones & Issues
 				</Typography>
 				<Divider />
 
 				<Stack spacing={2}>
-					{zones.map((z, i) => (
-						<ZoneCard key={i} zone={z} />
+					{rowData?.zones?.map((z, i) => (
+						<ZoneCard key={i} zone={rowData} index={i} />
 					))}
 				</Stack>
 

@@ -29,11 +29,6 @@ import { imageURL } from "../utils/images";
 const schema = Yup.object({
 	password: Yup.string()
 		.trim()
-		// .min(8, "At least 8 characters")
-		// .matches(/[A-Z]/, "Must include an uppercase letter")
-		// .matches(/[a-z]/, "Must include a lowercase letter")
-		// .matches(/\d/, "Must include a number")
-		// .matches(/[^A-Za-z0-9]/, "Must include a symbol")
 		.required("Password is required"),
 	confirmPassword: Yup.string()
 		.oneOf([Yup.ref("password")], "Passwords must match")
@@ -53,7 +48,6 @@ export default function ResetPassword() {
 		try {
 			const res = await changePassword(values.password, values.confirmPassword);
 			if (res.ok) {
-				// navigate("/login", { replace: true });
 				window.location.href = '/'
 				console.log("Password updated successfully.")
 			}

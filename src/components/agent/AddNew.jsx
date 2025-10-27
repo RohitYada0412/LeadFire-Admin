@@ -13,11 +13,25 @@ import * as Yup from "yup";
 import { createAgent, updateAgent } from "../../FirebaseDB/agent";
 import { deleteOwnAccount, signUpWithRole } from "../../FirebaseDB/resolveUserContext";
 import { useEffect } from "react";
+import { getCompanyById } from "../../FirebaseDB/companies";
+
+const phoneYup = Yup.string()
+  .trim()
+  .required("Phone number is required")
+  .test("is-valid-phone", "Enter a valid phone number", (value) => {
+    if (!value) return false;
+    const digits = value.replace(/\D/g, ""); // strip spaces, dashes, etc.
+    if (digits.length < 8 || digits.length > 15) return false;
+    // optional: reject all same digits like 0000000000
+    if (/^(\d)\1+$/.test(digits)) return false;
+    return true;
+  });
 
 const schema = Yup.object({
   agent_name: Yup.string().trim().required("Agent name is required"),
   email: Yup.string().trim().email("Enter a valid email").required("Email is required"),
   zone: Yup.mixed().required("Zone is required"),
+  phone_number: phoneYup
 });
 
 export default function AddCompanyDialog({
@@ -30,13 +44,6 @@ export default function AddCompanyDialog({
   companyData,
   zoneData
 }) {
-  // const [photoPreview, setPhotoPreview] = useState(null);
-
-  // show existing avatar when editing
-  // useEffect(() => {
-  //   if (open && initialData?.photoURL) setPhotoPreview(initialData.photoURL);
-  // }, [open, initialData?.photoURL]);
-
   const handleClosePop = () => {
     setInitialData({
       agent_name: "",
@@ -50,6 +57,7 @@ export default function AddCompanyDialog({
       photo: null,
       oldPhotoPath: null,
       photoURL: null,
+      phone_number: ''
     });
     setCompanyId("");
     // setPhotoPreview(null);
@@ -58,11 +66,18 @@ export default function AddCompanyDialog({
 
   const role = localStorage.getItem('auth')
 
-  console.log('role', JSON.parse(role).user.uid);
 
-  useEffect(()=>{
+  useEffect(() => {
+    if (open && JSON.parse(role).user.uid) {
+      getCompanyById(JSON.parse(role).user.uid).then((companyDetail) => {
+        setInitialData({
+          ...initialData,
+          company_name: companyDetail?.company_name
+        })
 
-  },[])
+      })
+    }
+  }, [companyId])
 
 
   return (
@@ -87,13 +102,11 @@ export default function AddCompanyDialog({
           photo: null,
           oldPhotoPath: initialData?.photoPath || null,
           photoURL: initialData?.photoURL || null,
+          phone_number: initialData?.phone_number
         }}
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
           values['company_id'] = JSON.parse(role).user.uid
-
-          console.log('values :- ',values);
-          
           try {
             if (companyId) {
               await updateAgent(String(companyId), values);
@@ -115,7 +128,7 @@ export default function AddCompanyDialog({
                     expiryMinutes: 15,
                   };
 
-                  const url = "https://mmfinfotech.co/leadfire-backend/api/send-email";
+                  const url = "https://mmfinfotech.co/leadfire-backend/api/send-email-agent";
                   const emailRes = await fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -191,11 +204,23 @@ export default function AddCompanyDialog({
                 </Stack>
 
                 <Stack>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Phone Number</Typography>
+                  <TextField
+                    placeholder="phone number"
+                    fullWidth
+                    {...getFieldProps("phone_number")}
+                    error={touched.phone_number && Boolean(errors.phone_number)}
+                    helperText={touched.phone_number && errors.phone_number}
+                  // disabled={Boolean(companyId)}
+                  />
+                </Stack>
+
+                <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Company</Typography>
                   {JSON.parse(role).role === 'company' ?
                     <TextField
                       name='company_id'
-                      value={'ad'}
+                      value={initialData?.company_name}
                       disabled
                     />
                     : <FormControl fullWidth>
@@ -218,24 +243,12 @@ export default function AddCompanyDialog({
                   )}
                 </Stack>
 
-                <Stack>
+                {/* <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Zone</Typography>
-                  {/* <FormControl fullWidth>
-                    <Select
-                      displayEmpty
-                      {...getFieldProps("zone")}
-                      onChange={(e) => setFieldValue("zone", e.target.value)}
-                    >
-                      <MenuItem value="" disabled>Select Zone</MenuItem>
-                      {zoneData?.map((_, i) => (
-                        <MenuItem value={_?.id} key={i}>{_?.zone_name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl> */}
                   <Autocomplete
                     multiple
                     disableCloseOnSelect
-                    options={zoneData || []}
+                    options={(zoneData || []).filter((z) => z.status === 1)}
                     getOptionLabel={(opt) => opt?.zone_name ?? ""}
                     isOptionEqualToValue={(o, v) => o?.id === v?.id}
                     // Form value is an array of IDs
@@ -255,9 +268,9 @@ export default function AddCompanyDialog({
                       />
                     )}
                   />
-                </Stack>
+                </Stack> */}
 
-                <Stack>
+                {/* <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Temporary Password</Typography>
                   <TextField
                     placeholder="Enter Temporary Password"
@@ -268,7 +281,7 @@ export default function AddCompanyDialog({
                     helperText={touched.temp_password && errors.temp_password}
                     disabled
                   />
-                </Stack>
+                </Stack> */}
               </Stack>
             </DialogContent>
 

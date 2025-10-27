@@ -6,7 +6,7 @@ import {
   getDocs,
   getFirestore,
   increment,
-  limit,
+  limit as qLimit,
   onSnapshot,
   orderBy,
   query,
@@ -23,16 +23,13 @@ const db = getFirestore();
  * Recalculate & update the number of agents belonging to a company
  * (called by agents.js on create/update/delete).
  * ──────────────────────────────────────────────────────────── */
+
 export async function updateCompanyAgentCount(companyId) {
   if (!companyId) return;
 
   // all agents belonging to this company
   const q = query(collection(db, "agents"), where("company_Id", "==", companyId));
   const snap = await getDocs(q);
-
-  console.log('snap',snap);
-  
-
   const agentTotal = snap.size;
   const zoneCount = {}; // { [zoneId]: count }
 
@@ -43,8 +40,8 @@ export async function updateCompanyAgentCount(companyId) {
     const zones = Array.isArray(d.zone)
       ? d.zone
       : d.zone != null
-      ? [d.zone]
-      : [];
+        ? [d.zone]
+        : [];
 
     zones
       .map((z) => String(z).trim())
@@ -53,7 +50,7 @@ export async function updateCompanyAgentCount(companyId) {
         zoneCount[zoneId] = (zoneCount[zoneId] || 0) + 1;
       });
   });
-  
+
 
   await updateDoc(doc(db, "companies", companyId), {
     agent_count: agentTotal,
@@ -75,7 +72,7 @@ export async function createCompany(data) {
 
   // 1) Email uniqueness (companies)
   const dup = await getDocs(
-    query(collection(db, "companies"), where("email_lc", "==", email), limit(1))
+    query(collection(db, "companies"), where("email_lc", "==", email), qLimit(1))
   );
   if (!dup.empty) throw new Error("A company with this email already exists.");
 
@@ -101,7 +98,7 @@ export async function createCompany(data) {
       user_name: data?.user_name ?? null,
       user_type: data?.user_type ?? "company",
       temp_password: data?.temp_password ?? null,
-      loginCount:0,
+      loginCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
@@ -109,111 +106,6 @@ export async function createCompany(data) {
   );
 
   return uid;
-}
-
-export function listenCompanies(params, cb) {
-  const agentField = params?.agentField || "company_Id";
-  const zonesCompanyField = params?.zonesCompanyField || "company_Id";
-
-  // build companies query (same as your original)
-  const parts = [collection(db, "companies")];
-  if (params?.status) parts.push(where("status", "==", params.status));
-  if (typeof params?.zone === "number") parts.push(where("zone", "==", params.zone));
-  parts.push(orderBy("createdAt", "desc"));
-  if (params?.limitBy) parts.push(limit(params.limitBy));
-  const qRef = query(...parts);
-
-  // track per-company listeners + latest data
-  const agentUnsubsByCompany = new Map();
-  const zonesUnsubsByCompany = new Map();
-  let companiesById = {};
-
-  const emit = () => cb(Object.values(companiesById));
-
-  const unsubCompanies = onSnapshot(qRef, (snap) => {
-    const currentIds = new Set();
-
-    // rebuild companies cache from snapshot
-    companiesById = {};
-    for (const d of snap.docs) {
-      const id = d.id;
-      companiesById[id] = {
-        id,
-        _snap: d,
-        ...d.data(),
-        agents: [],
-        agentCount: 0,
-        zonesCount: 0,
-      };
-      currentIds.add(id);
-    }
-
-    // stop listeners for companies no longer present
-    for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
-      if (!currentIds.has(companyId)) {
-        try { fn(); } catch {}
-        agentUnsubsByCompany.delete(companyId);
-      }
-    }
-    for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
-      if (!currentIds.has(companyId)) {
-        try { fn(); } catch {console.log('sadf')}
-        zonesUnsubsByCompany.delete(companyId);
-      }
-    }
-
-    // start/update per-company listeners
-    for (const companyId of currentIds) {
-      // agents (full docs + count)
-      if (!agentUnsubsByCompany.has(companyId)) {
-        const agentsQ = query(
-          collection(db, "agents"),
-          where(agentField, "==", companyId)
-        );
-
-        const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
-          const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
-          if (companiesById[companyId]) {
-            companiesById[companyId].agents = agents;
-            companiesById[companyId].agentCount = agents.length;
-            emit();
-          }
-        });
-
-        agentUnsubsByCompany.set(companyId, unsubAgents);
-      }
-
-      // zones (count only)
-      if (!zonesUnsubsByCompany.has(companyId)) {
-        const zonesQ = query(
-          collection(db, "zones"),
-          where(zonesCompanyField, "==", companyId)
-        );
-
-        const unsubZones = onSnapshot(zonesQ, (zoneSnap) => {
-          if (companiesById[companyId]) {
-            companiesById[companyId].zonesCount = zoneSnap.size; // live count
-            emit();
-          }
-        });
-
-        zonesUnsubsByCompany.set(companyId, unsubZones);
-      }
-    }
-
-    // emit companies immediately; per-company listeners will update counts/agents
-    emit();
-  });
-
-  // single unsubscribe that cleans up everything
-  return () => {
-    try { unsubCompanies(); } catch {console.log('sadf');
-    }
-    for (const fn of agentUnsubsByCompany.values()) { try { fn(); } catch {console.log('sadf')} }
-    for (const fn of zonesUnsubsByCompany.values()) { try { fn(); } catch {console.log('sadf')} }
-    agentUnsubsByCompany.clear();
-    zonesUnsubsByCompany.clear();
-  };
 }
 
 /** Default paged list (no search) */
@@ -289,4 +181,247 @@ export async function bumpCompanyLogin(uid, email) {
     uid,
     email,
   });
+}
+
+function formatCompanyId(value) {
+  // Accept "1", 1, "LLP000001" -> always return "LLP000001"
+  const digits = String(value || "").replace(/\D/g, ""); // strip non-digits
+  if (!digits) return null;
+  return `LLP${digits.padStart(6, "0")}`;
+}
+
+
+export function listenCompanies(params, cb) {
+  const agentField = params?.agentField || "company_Id";
+  const zonesCompanyField = params?.zonesCompanyField || "company_Id";
+
+  const relatedUsesFormattedId = !!params?.relatedUsesFormattedId; // default false
+  const formatFromField = params?.formatFromField || null;
+
+
+
+
+  const colRef = collection(db, "companies");
+  const constraints = [];
+
+  // filters
+  if (typeof params?.status === "number") {
+    constraints.push(where("status", "==", params.status));
+  }
+  if (typeof params?.zone === "number") {
+    constraints.push(where("zone", "==", params.zone));
+  }
+
+  if (params?.limitBy) constraints.push(qLimit(params.limitBy));
+
+  const qRef = query(colRef, ...constraints);
+
+  // --- live companies, plus per-company agents & zones counts ---
+  const agentUnsubsByCompany = new Map();
+  const zonesUnsubsByCompany = new Map();
+  let companiesById = {};
+
+  const emit = () => cb(Object.values(companiesById));
+
+  const unsubCompanies = onSnapshot(qRef, (snap) => {
+    const currentIds = new Set();
+
+    companiesById = {};
+    snap.docs.forEach((d) => {
+      const id = d.id;
+      const data = d.data();
+
+      const valueToFormat = formatFromField ? data?.[formatFromField] : id;
+
+
+
+      const companyIdFormatted = formatCompanyId(valueToFormat);
+
+
+      companiesById[id] = {
+        id,
+        companyIdFormatted,
+        _snap: d,
+        ...d.data(),
+        agents: [],
+        agentCount: 0,
+        zonesCount: 0,
+      };
+      currentIds.add(id);
+    });
+
+    // cleanup listeners for companies no longer present
+    for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
+      if (!currentIds.has(companyId)) { try { fn(); } catch { } agentUnsubsByCompany.delete(companyId); }
+    }
+    for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
+      if (!currentIds.has(companyId)) { try { fn(); } catch { } zonesUnsubsByCompany.delete(companyId); }
+    }
+
+    // wire per-company listeners (agents + zones count)
+    for (const companyId of currentIds) {
+      if (!agentUnsubsByCompany.has(companyId)) {
+        const agentsQ = query(
+          collection(db, "agents"),
+          where(agentField, "==", companyId)
+        );
+
+        const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
+          const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
+          if (companiesById[companyId]) {
+            companiesById[companyId].agents = agents;
+            companiesById[companyId].agentCount = agents.length;
+            emit();
+          }
+        });
+        agentUnsubsByCompany.set(companyId, unsubAgents);
+      }
+
+      if (!zonesUnsubsByCompany.has(companyId)) {
+        const zonesQ = query(
+          collection(db, "zones"),
+          where(zonesCompanyField, "==", companyId)
+        );
+        const unsubZones = onSnapshot(zonesQ, (zoneSnap) => {
+          if (companiesById[companyId]) {
+            companiesById[companyId].zonesCount = zoneSnap.size;
+            emit();
+          }
+        });
+        zonesUnsubsByCompany.set(companyId, unsubZones);
+      }
+    }
+
+    emit();
+  });
+
+  // single unsubscribe
+  return () => {
+    try { unsubCompanies(); } catch { }
+    for (const fn of agentUnsubsByCompany.values()) { try { fn(); } catch { } }
+    for (const fn of zonesUnsubsByCompany.values()) { try { fn(); } catch { } }
+    agentUnsubsByCompany.clear();
+    zonesUnsubsByCompany.clear();
+  };
+}
+
+// Helper: turn a numeric/string id into "LLP000001"
+// function formatCompanyId(value) {
+//   // Accept "1", 1, "LLP000001" -> always return "LLP000001"
+//   const digits = String(value || "").replace(/\D/g, ""); // strip non-digits
+//   if (!digits) return null;
+//   return `LLP${digits.padStart(6, "0")}`;
+// }
+
+export function listenCompanies1(params, cb) {
+  const agentField = params?.agentField || "company_Id";
+  const zonesCompanyField = params?.zonesCompanyField || "company_Id";
+  const relatedUsesFormattedId = !!params?.relatedUsesFormattedId; // default false
+  const formatFromField = params?.formatFromField || null;
+
+  const colRef = collection(db, "companies");
+  const constraints = [];
+
+  if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
+  if (typeof params?.zone === "number") constraints.push(where("zone", "==", params.zone));
+  if (params?.limitBy) constraints.push(qLimit(params.limitBy));
+
+  const qRef = query(colRef, ...constraints);
+
+  const agentUnsubsByCompany = new Map();
+  const zonesUnsubsByCompany = new Map();
+  let companiesById = {};
+
+  const emit = () => cb(Object.values(companiesById));
+
+  const unsubCompanies = onSnapshot(qRef, (snap) => {
+    const currentIds = new Set();
+    companiesById = {};
+
+    snap.docs.forEach((d) => {
+      const id = d.id;
+      const data = d.data();
+
+      // Decide the source value to format:
+      // - If you keep a numeric sequence in the doc (e.g., data.sequence = 1), prefer that
+      // - Else fall back to the doc id (digits inside will be used)
+      const valueToFormat = formatFromField ? data?.[formatFromField] : id;
+      const companyIdFormatted = formatCompanyId(valueToFormat);
+
+      companiesById[id] = {
+        id,                   // raw Firestore doc id
+        companyIdFormatted,   // "LLP000001"
+        _snap: d,
+        ...data,
+        agents: [],
+        agentCount: 0,
+        zonesCount: 0,
+      };
+      currentIds.add(id);
+    });
+
+    // cleanup listeners
+    for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
+      if (!currentIds.has(companyId)) { try { fn(); } catch { } agentUnsubsByCompany.delete(companyId); }
+    }
+    for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
+      if (!currentIds.has(companyId)) { try { fn(); } catch { } zonesUnsubsByCompany.delete(companyId); }
+    }
+
+    // wire per-company listeners
+    for (const companyId of currentIds) {
+      const company = companiesById[companyId];
+      const keyForRelated = relatedUsesFormattedId ? company.companyIdFormatted : companyId;
+
+      if (!agentUnsubsByCompany.has(companyId)) {
+        const agentsQ = query(
+          collection(db, "agents"),
+          where(agentField, "==", keyForRelated)
+        );
+        const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
+          const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
+          if (companiesById[companyId]) {
+            companiesById[companyId].agents = agents;
+            companiesById[companyId].agentCount = agents.length;
+            emit();
+          }
+        });
+        agentUnsubsByCompany.set(companyId, unsubAgents);
+      }
+
+      if (!zonesUnsubsByCompany.has(companyId)) {
+        const zonesQ = query(
+          collection(db, "zones"),
+          where(zonesCompanyField, "==", keyForRelated)
+        );
+        const unsubZones = onSnapshot(zonesQ, (zoneSnap) => {
+          if (companiesById[companyId]) {
+            companiesById[companyId].zonesCount = zoneSnap.size;
+            emit();
+          }
+        });
+        zonesUnsubsByCompany.set(companyId, unsubZones);
+      }
+    }
+
+    emit();
+  });
+
+  return () => {
+    try { unsubCompanies(); } catch {
+      console.error('Some error')
+    }
+    for (const fn of agentUnsubsByCompany.values()) {
+      try { fn(); } catch {
+        console.error('Some error')
+      }
+    }
+    for (const fn of zonesUnsubsByCompany.values()) {
+      try { fn(); } catch {
+        console.error('Some error')
+      }
+    }
+    agentUnsubsByCompany.clear();
+    zonesUnsubsByCompany.clear();
+  };
 }

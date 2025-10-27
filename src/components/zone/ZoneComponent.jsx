@@ -102,7 +102,6 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 											>
 												<MenuItem value={1}>Active</MenuItem>
 												<MenuItem value={2}>Inactive</MenuItem>
-												<MenuItem value={3}>Pending</MenuItem>
 											</Select>
 										</FormControl>
 									</StyledTableCell>

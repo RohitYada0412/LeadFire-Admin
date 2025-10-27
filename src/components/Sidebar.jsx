@@ -27,30 +27,30 @@ function DrawerContent({ setOpen, onLogout, isUser }) {
   const navItems = [
     { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
     { text: "Company", to: "/company", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
-    { text: "Agents", to: "/agents", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
-    { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
+    // { text: "Agents", to: "/agents", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
+    // { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
     { text: "Logout", action: "logout", icon: <Iconify icon="humbleicons:logout" width={20} height={20} /> },
   ]
   const companyItem = [
     { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
-    { text: "Agents", to: "/agents", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
+    { text: "Agents", to: "/agents", icon: <Iconify icon="mdi:account-tie-outline" width={20} height={20} /> },
     { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
-    { text: "Issues", to: "/issues", icon: <Iconify icon="ph:warning" width={20} height={20} /> },
+    // { text: "Issues", to: "/issues", icon: <Iconify icon="ph:warning" width={20} height={20} /> },
     { text: "Logout", action: "logout", icon: <Iconify icon="humbleicons:logout" width={20} height={20} /> },
   ]
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", color: "#fff" }}>
-      <Toolbar sx={{ minHeight: 68, px: 2, gap: 1.25 }}>
+      <Toolbar sx={{ minHeight: 68, px: 2, gap: 1.25, py: 1 }}>
         <Box
           component="img"
-          src={imageURL.logoSider}
+          src={imageURL.logo}
           alt="LeadFire"
-          sx={{ width: 32, height: 32, objectFit: "contain" }}
+          sx={{ width: '100%', height: 100, objectFit: "contain" }}
         />
-        <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1 }}>
+        {/* <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1 }}>
           LeadFire
-        </Typography>
+        </Typography> */}
 
         {/* mobile close */}
         <IconButton

@@ -1,7 +1,9 @@
 import {
 	Avatar,
+	Backdrop,
 	Box,
 	Button,
+	CircularProgress,
 	FormControl,
 	MenuItem,
 	Paper,
@@ -19,6 +21,7 @@ import {
 import { styled } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../utils/service';
+import { useCallback, useState } from 'react';
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -45,10 +48,28 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 	'&:last-child td, &:last-child th': { border: 0 },
 }));
 
-export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUser  /* loading */ }) {
+export default function ZoneTable({ data, loading, setCompanyId, setOpen, isUser  /* loading */ }) {
+
+	const [expandedIds, setExpandedIds] = useState(false);
+
+	const toggleRow = useCallback((id) => {
+		setExpandedIds(prev => {
+			const next = new Set(prev);
+			next.has(id) ? next.delete(id) : next.add(id);
+			return next;
+		});
+	}, []);
+
 
 	return (
 		<Box>
+
+			<Backdrop
+				sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+				open={loading}
+			>
+				<CircularProgress color="inherit" />
+			</Backdrop>
 			<TableContainer
 				component={Paper}
 				elevation={0}
@@ -68,7 +89,7 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 							<StyledTableCell align="center">Zone</StyledTableCell>
 							<StyledTableCell align="center">Agent</StyledTableCell>
 							<StyledTableCell>Date</StyledTableCell>
-							<StyledTableCell>Status</StyledTableCell>
+							{/* <StyledTableCell>Status</StyledTableCell> */}
 							{isUser && <StyledTableCell align="right">Actions</StyledTableCell>}
 						</TableRow>
 					</TableHead>
@@ -76,39 +97,27 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 					<TableBody>
 						{data?.length > 0 ?
 							data.map((r) => {
-								console.log('r :-', r);
-
-								const selectId = `status-select-${r.id}`;
-								const labelId = `status-label-${r.id}`;
 								return (
 									<StyledTableRow key={r.id}>
 										<StyledTableCell>
 											{r.id || 'N/A'}
 										</StyledTableCell>
 
-										<StyledTableCell sx={{ wordBreak: 'break-all' }}>
-											{r.company_name}
+										<StyledTableCell sx={{ wordBreak: "break-all" }}>
+											<Box>
+												{r?.issueType.map((it, i) => (
+													<Typography key={`${r.id}-${i}`} variant="body2">
+														{it},
+													</Typography>
+												))}
+
+											</Box>
 										</StyledTableCell>
+
 										<StyledTableCell align="center">{r.address}</StyledTableCell>
 										<StyledTableCell align="center">{r.agentName}</StyledTableCell>
-										<StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell>
-										<StyledTableCell>
-											<FormControl size="small" sx={{ m: 1 }}>
-												<Select
-													labelId={labelId}
-													id={selectId}
-													value={r.status}
-													onChange={(e) => {
-														const next = Number(e.target.value);
-														setStatus(r.id, next);
-													}}
-												>
-													<MenuItem value={1}>Active</MenuItem>
-													<MenuItem value={2}>Inactive</MenuItem>
-													<MenuItem value={3}>Pending</MenuItem>
-												</Select>
-											</FormControl>
-										</StyledTableCell>
+										<StyledTableCell>{r.createdAt}</StyledTableCell>
+
 										{isUser &&
 											<StyledTableCell align="right">
 												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}

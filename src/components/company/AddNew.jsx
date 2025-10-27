@@ -82,7 +82,7 @@ export default function AddCompanyDialog({
 							let res = await createCompany(values)
 							console.log(res);
 
-							
+
 
 							if (res !== null) {
 								const emailPayload = {
@@ -91,7 +91,6 @@ export default function AddCompanyDialog({
 									code: values?.temp_password,
 									expiryMinutes: 15,
 								};
-
 								const url = "https://mmfinfotech.co/leadfire-backend/api/send-email";
 								const emailRes = await fetch(url, {
 									method: "POST",
@@ -109,8 +108,8 @@ export default function AddCompanyDialog({
 										msg = data?.message || data?.error || msg;
 									} catch (_) {
 										console.error(_);
-										
-									 }
+
+									}
 									// Not fatal to company creation, but you may want to inform the user:
 									console.warn(msg);
 								}
@@ -163,7 +162,7 @@ export default function AddCompanyDialog({
 
 							</Stack>
 
-							<Stack direction='column'>
+							{/* <Stack direction='column'>
 								<Typography variant="body1">Temporary Password</Typography>
 								<TextField
 									placeholder="Enter Temporary Password"
@@ -174,7 +173,7 @@ export default function AddCompanyDialog({
 									disabled
 									{...getFieldProps("temp_password")}
 								/>
-							</Stack>
+							</Stack> */}
 						</DialogContent>
 
 						<DialogActions sx={{ px: 3, pb: 2 }}>

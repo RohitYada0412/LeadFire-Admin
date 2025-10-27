@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { Button, FormControl, Grid2, InputAdornment, MenuItem, Select, TextField } from "@mui/material";
 import Iconify from "../components/common/iconify/Iconify";
 
+import { useSelector } from "react-redux";
 import ZoneDialog from "../components/zone/AddNew";
 import ZoneTable from "../components/zone/ZoneComponent";
-import { getCompanyById, updateCompany } from "../FirebaseDB/companies";
-import { listZones } from "../FirebaseDB/zone";
-import { useSelector } from "react-redux";
+import { getCompanyById } from "../FirebaseDB/companies";
+import { listZones, updateZoneStatus } from "../FirebaseDB/zone";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 
 const Zone = () => {
 
@@ -17,10 +18,13 @@ const Zone = () => {
 	const [loading, setLoading] = useState(true);
 	const [rows, setRows] = useState([])
 	const [debouncedSearch, setDebouncedSearch] = useState("");
+	const [openConfirm, setOpenConfirm] = useState(false);
+	const [status, setStatus] = useState({})
 
 	const [filterData, setFilterData] = useState({
-		status: 0,
-		zone: 0
+		// status: 1,
+		// zone_id: ''
+		search: ''
 	})
 
 	const [initialData, setInitialData] = useState({
@@ -35,37 +39,68 @@ const Zone = () => {
 	const [companyId, setCompanyId] = useState('')
 
 	const handleClickOpen = () => setOpen(true);
+	const PAGE_SIZE = 50;
+
+
+	const agentParams = useMemo(() => {
+		const authRaw = localStorage.getItem("auth");
+		const auth = authRaw ? JSON.parse(authRaw) : null;
+
+		const companyIdFromAuth =
+			auth?.user?.role !== "admin" && auth?.user?.uid
+				? String(auth.user.uid)
+				: null;
+
+		const p = { limitBy: PAGE_SIZE };
+
+		if (companyIdFromAuth) p.company_id = companyIdFromAuth;
+
+		if (filterData.status !== "" && filterData.status != null)
+			p.status = Number(filterData.status);
+
+		// if (Array.isArray(filterData.zone) && filterData.zone.length > 0) {
+		// 	p.zone = filterData.zone.map(String);
+		// }
+		if (debouncedSearch) p.search = debouncedSearch;
+
+		return p;
+	}, [filterData.status, debouncedSearch]);
+
 
 	useEffect(() => {
 		const id = setTimeout(
-			() => setDebouncedSearch(filterData.search.trim()),
+			() => setDebouncedSearch(filterData?.search?.trim()),
 			250
 		);
 		return () => clearTimeout(id);
 	}, [filterData.search]);
 
 	useEffect(() => {
-		const payload = {
-			limitBy: 50,
-			search: debouncedSearch,
-			...filterData
-		}
-		const unsub = listZones(payload, (docs) => {
+		const unsub = listZones(agentParams, (docs) => {
 			setRows(docs);
 			setLoading(false);
 		});
 		return () => unsub();
-	}, [debouncedSearch, filterData]);
-
+	}, [agentParams, debouncedSearch, filterData]);
 
 	const handleSelect = async (id, nextStatus) => {
+		setOpenConfirm(true)
+		setStatus({
+			id: id,
+			nextStatus: nextStatus
+		})
+	}
+
+
+
+	const handleSelectConfirm = async (id, nextStatus) => {
 		const prevRow = rows.find(r => r.id === id);
 		const prevStatus = prevRow?.status;
 
 		setRows(prev => prev.map(r => (r.id === id ? { ...r, status: nextStatus } : r)));
 
 		try {
-			await updateCompany(String(id), { status: Number(nextStatus) });
+			await updateZoneStatus(String(id), nextStatus);
 		} catch (err) {
 			console.error("Failed to update company:", err);
 			setRows(prev => prev.map(r => (r.id === id ? { ...r, status: prevStatus } : r)));
@@ -75,17 +110,16 @@ const Zone = () => {
 		}
 	};
 
+
+
+
 	useEffect(() => {
 		if (open && companyId) {
 			getCompanyById(companyId).then((companyDetail) => {
-				console.log('companyDetail', companyDetail);
 				setInitialData(companyDetail)
-
 			})
 		}
 	}, [companyId, open])
-
-
 
 	return (
 		<React.Fragment>
@@ -124,28 +158,7 @@ const Zone = () => {
 					<Grid2>
 						<FormControl size="small">
 							<Select
-								value={filterData.zone}
-								onChange={(e) => {
-									setFilterData((prev) => ({
-										...prev,
-										zone: e.target.value,
-									}));
-								}}
-							>
-								<MenuItem value={0} disabled>
-									All Zone
-								</MenuItem>
-								<MenuItem value={1}>Zone 1</MenuItem>
-								<MenuItem value={2}>Zone 2</MenuItem>
-								<MenuItem value={3}>Zone 3</MenuItem>
-							</Select>
-						</FormControl>
-					</Grid2>
-
-					<Grid2>
-						<FormControl size="small">
-							<Select
-								value={filterData.status}
+								value={filterData.status || 0}
 								onChange={(e) => {
 									setFilterData((prev) => ({
 										...prev,
@@ -158,7 +171,6 @@ const Zone = () => {
 								</MenuItem>
 								<MenuItem value={1}>Active</MenuItem>
 								<MenuItem value={2}>Inactive</MenuItem>
-								<MenuItem value={3}>Pending</MenuItem>
 							</Select>
 						</FormControl>
 					</Grid2>
@@ -206,6 +218,13 @@ const Zone = () => {
 				/>
 			}
 
+			<ConfirmDialog
+				open={openConfirm}
+				title="Status Confirmation"
+				message="Are you sure you want to change the status of this Zone?"
+				onClose={setOpenConfirm}
+				onConfirm={handleSelectConfirm}
+			/>
 
 		</React.Fragment>
 	)

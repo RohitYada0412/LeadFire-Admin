@@ -147,3 +147,14 @@ export function gramsForQuery(termLc) {
 //     if (typeof cb === "function") cb(rows);
 //   });
 // }
+
+export const libraries = ["places"];
+export const mapOptions = {
+  streetViewControl: false,
+  mapTypeControl: false,
+  fullscreenControl: false,
+  draggableCursor: "grab",
+};
+
+export const circleOptions = { fillOpacity: 0.15, strokeOpacity: 0.6 };
+export const toMeters = (v, unit) => (unit === "KM" ? v * 1000 : v * 1609.34);

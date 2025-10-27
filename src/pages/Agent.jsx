@@ -19,6 +19,7 @@ import { useSelector } from "react-redux";
 import { generateTempPassword } from "../utils/password";
 
 import { doc, getDoc, getFirestore } from "firebase/firestore";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 const db = getFirestore();
 
 const PAGE_SIZE = 50;
@@ -28,6 +29,9 @@ const Agent = () => {
 
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
+	const [openConfirm, setOpenConfirm] = useState(false);
+	const [status, setStatus] = useState({})
+
 
 	// table rows
 	const [rows, setRows] = useState([]);
@@ -111,8 +115,6 @@ const Agent = () => {
 				const { rows, firstDoc, lastDoc, hasMore } = await listAgents(
 					agentParams,
 					(docs) => {
-						console.log('docs :- ', docs);
-
 						setRows(docs);
 						setLoading(false);
 					},
@@ -216,20 +218,28 @@ const Agent = () => {
 
 	// inline status update
 	const handleSelect = async (id, nextStatus) => {
-		const prevRow = rows.find((r) => r.id === id);
+		setOpenConfirm(true)
+		setStatus({
+			id: id,
+			nextStatus: nextStatus
+		})
+	};
+
+	const handleSelectConfirm = async () => {
+		const prevRow = rows.find((r) => r.id === status?.id);
 		const prevStatus = prevRow?.status;
 
 		setRows((prev) =>
-			prev.map((r) => (r.id === id ? { ...r, status: nextStatus } : r))
+			prev.map((r) => (r.id === status?.id ? { ...r, status: status?.nextStatus } : r))
 		);
 
 		try {
-			await updateAgent(String(id), { status: Number(nextStatus) });
+			await updateAgent(String(status?.id), { status: Number(status?.nextStatus) });
 		} catch (err) {
 			console.error("Failed to update agent:", err);
 			// rollback
 			setRows((prev) =>
-				prev.map((r) => (r.id === id ? { ...r, status: prevStatus } : r))
+				prev.map((r) => (r.id === status?.id ? { ...r, status: prevStatus } : r))
 			);
 		}
 	};
@@ -253,6 +263,7 @@ const Agent = () => {
 							status: d.status ?? 1,
 							user_name: d.user_name ?? "agent",
 							user_type: d.user_type ?? 3,
+							phone_number: d.phone_number
 						});
 					}
 				} catch (e) {
@@ -328,7 +339,9 @@ const Agent = () => {
 								<MenuItem value="" disabled>
 									All Zones
 								</MenuItem>
+
 								{zoneData.map((z) => (
+									z.status === 1 &&
 									<MenuItem key={z.id} value={z.id}>
 										{z.zone_name || z.id}
 									</MenuItem>
@@ -354,7 +367,6 @@ const Agent = () => {
 								<MenuItem value="">All Status</MenuItem>
 								<MenuItem value={1}>Active</MenuItem>
 								<MenuItem value={2}>Inactive</MenuItem>
-								<MenuItem value={3}>Pending</MenuItem>
 							</Select>
 						</FormControl>
 					</Grid2>
@@ -374,6 +386,7 @@ const Agent = () => {
 					)}
 				</Grid2>
 			</Grid2>
+
 			<AgentTable
 				data={rows}
 				loading={loading}
@@ -381,23 +394,32 @@ const Agent = () => {
 				setCompanyId={setAgentId}
 				setOpen={setOpen}
 				isUser={isUser}
-				page={page}          // number, not { page: 1 }
-				hasMore={hasMore}    // boolean, not { hasMore: true }
+				page={page}
+				hasMore={hasMore}
 				onPrev={goPrev}
 				onNext={goNext}
 			/>
+
 			{open && (
 				<AddCompanyDialog
 					open={open}
 					handleClose={() => setOpen(false)}
 					initialData={initialData}
-					companyId={agentId}           // prop name kept for compatibility with your dialog
+					companyId={agentId}
 					setInitialData={setInitialData}
 					setCompanyId={setAgentId}
 					companyData={companies}
 					zoneData={zoneData}
 				/>
 			)}
+
+			<ConfirmDialog
+				open={openConfirm}
+				title="Status Confirmation"
+				message="Are you sure you want to change the status of this agent?"
+				onClose={setOpenConfirm}
+				onConfirm={handleSelectConfirm}
+			/>
 		</React.Fragment>
 	);
 };
