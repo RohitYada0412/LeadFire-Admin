@@ -22,7 +22,6 @@ const phoneYup = Yup.string()
     if (!value) return false;
     const digits = value.replace(/\D/g, ""); // strip spaces, dashes, etc.
     if (digits.length < 8 || digits.length > 15) return false;
-    // optional: reject all same digits like 0000000000
     if (/^(\d)\1+$/.test(digits)) return false;
     return true;
   });
@@ -42,7 +41,6 @@ export default function AddCompanyDialog({
   setInitialData,
   setCompanyId,
   companyData,
-  zoneData
 }) {
   const handleClosePop = () => {
     setInitialData({
@@ -60,7 +58,6 @@ export default function AddCompanyDialog({
       phone_number: ''
     });
     setCompanyId("");
-    // setPhotoPreview(null);
     handleClose();
   };
 
@@ -70,6 +67,10 @@ export default function AddCompanyDialog({
   useEffect(() => {
     if (open && JSON.parse(role).user.uid) {
       getCompanyById(JSON.parse(role).user.uid).then((companyDetail) => {
+
+        console.log('companyDetail?.company_name', companyDetail?.company_name);
+
+
         setInitialData({
           ...initialData,
           company_name: companyDetail?.company_name
@@ -78,6 +79,9 @@ export default function AddCompanyDialog({
       })
     }
   }, [companyId])
+
+
+
 
 
   return (

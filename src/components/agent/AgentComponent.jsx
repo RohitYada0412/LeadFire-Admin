@@ -69,11 +69,11 @@ export default function AgentTable({
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Agent Name</StyledTableCell>
-							<StyledTableCell>Email</StyledTableCell>
+							<StyledTableCell align="center">Email</StyledTableCell>
 							<StyledTableCell align="center">Zone</StyledTableCell>
-							{/* <StyledTableCell align="center">Agents ID</StyledTableCell> */}
-							<StyledTableCell>Date Joined</StyledTableCell>
-							<StyledTableCell>Status</StyledTableCell>
+
+							<StyledTableCell align="center">Date Joined</StyledTableCell>
+							<StyledTableCell align='center'>Status</StyledTableCell>
 							{isUser && <StyledTableCell align="right">Actions</StyledTableCell>}
 						</TableRow>
 					</TableHead>
@@ -93,13 +93,13 @@ export default function AgentTable({
 										</Stack>
 									</StyledTableCell>
 
-									<StyledTableCell sx={{ wordBreak: 'break-all' }}>
+									<StyledTableCell align="center" sx={{ wordBreak: 'break-all' }}>
 										{r.email}
 									</StyledTableCell>
 									<StyledTableCell align="center">{r.zone?.length > 0 ? r.zone.length : 'N/A'}</StyledTableCell>
-									{/* <StyledTableCell align="center">{r.agentIdFormatted}</StyledTableCell> */}
-									<StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell>
-									<StyledTableCell>
+
+									<StyledTableCell align="center">{formatTimestamp(r.createdAt)}</StyledTableCell>
+									<StyledTableCell align='center'>
 										<FormControl size="small" sx={{ m: 1 }}>
 											<Select
 												labelId={labelId}
@@ -116,31 +116,32 @@ export default function AgentTable({
 											</Select>
 										</FormControl>
 									</StyledTableCell>
-									{isUser && <StyledTableCell align="right">
-										<Stack direction='row' spacing={2}>
-											<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
-												onClick={() => {
-													setOpen(true)
-													setCompanyId(r?.id)
+									{isUser &&
+										<StyledTableCell align="right">
+											<Stack direction='row' justifyContent='end' spacing={2}>
+												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
+													onClick={() => {
+														setOpen(true)
+														setCompanyId(r?.id)
 
-													// navigate(`/agents/${r?.id}`)
-												}}
-											>
-												Edit
-											</Button>
-											<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
-												onClick={() => {
-													// setOpen(true)
-													// setCompanyId(r?.id)
+														// navigate(`/agents/${r?.id}`)
+													}}
+												>
+													Edit
+												</Button>
+												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
+													onClick={() => {
+														// setOpen(true)
+														// setCompanyId(r?.id)
 
-													navigate(`/agents/${r?.id}`)
-												}}
-											>
-												View Detail
-											</Button>
+														navigate(`/agents/${r?.id}`)
+													}}
+												>
+													View Detail
+												</Button>
 
-										</Stack>
-									</StyledTableCell>}
+											</Stack>
+										</StyledTableCell>}
 								</StyledTableRow>
 							)
 						}) : <StyledTableRow>

@@ -51,9 +51,6 @@ export default function ResetPassword() {
 				window.location.href = '/'
 				console.log("Password updated successfully.")
 			}
-
-			// if (res.ok) setMsg("Password updated successfully.");
-			// else if (res.needsReauth) setMsg("Please enter your current password to reauthenticate.");
 		} catch (err) {
 			toast.error(err)
 			console.log();
@@ -165,19 +162,6 @@ export default function ResetPassword() {
 									<Typography variant="h6" color="text.secondary" className="text-center fw-normal" sx={{ textAlign: "center" }}>
 										For your security, please set a strong password and confirm it.
 									</Typography>
-									{/* {loadingLink ? (
-										<Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-											Validating reset link…
-										</Typography>
-									) : emailForReset ? (
-										<Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-											Resetting password for <b>{emailForReset}</b>
-										</Typography>
-									) : (
-										<Typography variant="body2" color="error" sx={{ textAlign: "center" }}>
-											Invalid or expired reset link.
-										</Typography>
-									)} */}
 								</Stack>
 
 								<Formik

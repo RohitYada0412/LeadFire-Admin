@@ -1,6 +1,7 @@
 // ZoneDialog.jsx
 import CloseIcon from "@mui/icons-material/Close";
 import {
+  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -33,12 +34,12 @@ import Iconify from "../common/iconify/Iconify";
 // ---------------- Schema ----------------
 const schema = Yup.object({
   zone_name: Yup.string().trim().required("Zone name is required"),
-  location: Yup.string().trim().required("Location is required"),
+  address: Yup.string().trim().required("Location is required"),
   radius_value: Yup.number()
     .typeError("Enter a number")
     .min(0.1, "Too small")
     .required("Radius is required"),
-  radius_unit: Yup.mixed().oneOf(["KM", "MI"]).required(),
+  radius_unit: Yup.mixed().oneOf(["km", "mi"]).required(),
   center: Yup.object({
     lat: Yup.number().required(),
     lng: Yup.number().required(),
@@ -62,6 +63,9 @@ export default function ZoneDialog({
   open,
   onClose,
   initialData,
+  setInitialData,
+  setCompanyId,
+  rowAgent
 }) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY, // <-- set this
@@ -79,11 +83,15 @@ export default function ZoneDialog({
       company_Id: initialData?.company_Id || "",
       zone_name: initialData?.zone_name || "",
       radius_value: initialData?.radius_value ?? '',
-      radius_unit: initialData?.radius_unit || "MI",
-      center: initialData?.center /* ||  { lat: 28.6139, lng: 77.209 }*/,
-      lat: initialData?.center?.lat /* ?? 28.6139*/,
-      lng: initialData?.center?.lng /* ?? 77.209*/,
-      address: initialData?.location || "",
+      radius_unit: initialData?.radius_unit || "mi",
+      center: {
+        lat: initialData?.lat /* ?? 28.6139*/,
+        lng: initialData?.lng
+      } /* ||  { lat: 28.6139, lng: 77.209 }*/,
+      lat: initialData?.lat /* ?? 28.6139*/,
+      lng: initialData?.lng /* ?? 77.209*/,
+      address: initialData?.address || "",
+      agent_id: initialData?.agent_id || "",
     }),
     [initialData]
   );
@@ -115,18 +123,12 @@ export default function ZoneDialog({
       setFieldValue("center", { lat, lng }, false);
       setFieldValue("lat", lat, false);
       setFieldValue("lng", lng, false);
-      setFieldValue("location", formatted, false);
+      // setFieldValue("location", formatted, false);
       setFieldValue("address", formatted, false);
       mapRef.current?.panTo({ lat, lng });
       // mapRef.current?.setZoom(13); // optionally adjust zoom
     }
   }, []);
-
-  // const authRaw = localStorage.getItem("auth");
-  // const auth = authRaw ? JSON.parse(authRaw) : null;
-
-  // console.log('auth', auth);
-
 
   return (
     <Dialog
@@ -147,7 +149,11 @@ export default function ZoneDialog({
         <Typography variant="h6" fontWeight={700}>
           {initialData?.id ? "Edit Zone" : "Add Zone"}
         </Typography>
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" onClick={() => {
+          setInitialData({})
+          setCompanyId(null)
+          onClose()
+        }}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -155,6 +161,7 @@ export default function ZoneDialog({
       <Formik
         initialValues={defaults}
         enableReinitialize
+
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
           const authRaw = localStorage.getItem("auth");
@@ -172,6 +179,8 @@ export default function ZoneDialog({
               await createZone(values);
             }
             helpers.setSubmitting(false);
+            setInitialData({})
+            setCompanyId(null)
             onClose();
           } catch (e) {
             helpers.setSubmitting(false);
@@ -204,13 +213,38 @@ export default function ZoneDialog({
                   <TextField
                     placeholder="Zone 01"
                     fullWidth
-                    value={values.name}
+                    value={values.zone_name}
                     onChange={(e) => setFieldValue("zone_name", e.target.value)}
-                    error={touched.name && Boolean(errors.name)}
-                    helperText={touched.name && errors.name}
+                    error={touched.zone_name && Boolean(errors.zone_name)}
+                    helperText={touched.zone_name && errors.zone_name}
                   />
                 </Stack>
-
+                <Stack>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent</Typography>
+                  <Autocomplete
+                    multiple
+                    disableCloseOnSelect
+                    options={(rowAgent || []).filter((z) => z.status === 1)}
+                    getOptionLabel={(opt) => opt?.agent_name ?? ""}
+                    isOptionEqualToValue={(o, v) => o?.id === v?.id}
+                    // Form value is an array of IDs
+                    value={(values.agent_id || [])
+                      .map((id) => (rowAgent || []).find((z) => z.id === id))
+                      .filter(Boolean)}
+                    onChange={(_, selected) => {
+                      const ids = selected.map((z) => z.id);
+                      setFieldValue("agent_id", ids);
+                    }}
+                    filterSelectedOptions
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        // label="Select Zone"
+                        placeholder="Search or select zones…"
+                      />
+                    )}
+                  />
+                </Stack>
                 {/* Location (Places Autocomplete) */}
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>
@@ -268,14 +302,15 @@ export default function ZoneDialog({
                     </Grid2>
                     <Grid2 xs={2}>
                       <Select
+                        // name="radius_unit"
                         fullWidth
                         value={values.radius_unit}
                         onChange={(e) =>
                           setFieldValue("radius_unit", e.target.value)
                         }
                       >
-                        <MenuItem value="MI">MI</MenuItem>
-                        <MenuItem value="KM">KM</MenuItem>
+                        <MenuItem value="mi">MI</MenuItem>
+                        <MenuItem value="km">KM</MenuItem>
                       </Select>
                     </Grid2>
                   </Grid2>

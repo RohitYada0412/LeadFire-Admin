@@ -5,6 +5,7 @@ import {
   deleteDoc,
   doc,
   documentId,
+  endAt,
   getDoc,
   getDocs,
   getFirestore,
@@ -17,6 +18,7 @@ import {
   serverTimestamp,
   setDoc,
   startAfter,
+  startAt,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -214,90 +216,173 @@ export async function deleteAgent(agentId) {
   }
 }
 
-// export function listAgents(params = {}, onData, onError, cursor = null,) {
+
+// export function listAgents(params = {}, onData, onError, cursor = null) {
 //   const colRef = collection(getFirestore() || db, "agents");
 //   const constraints = [];
 
 //   if (params.company_id) {
 //     constraints.push(where("company_Id", "==", params.company_id));
 //   }
-//   // // status filter
 //   if (typeof params.status === "number") {
 //     constraints.push(where("status", "==", params.status));
-
 //   }
-
-//   // // zone filter (array)
 //   if (Array.isArray(params.zone) && params.zone.length > 0) {
 //     constraints.push(where("zone", "in", [params.zone.slice(0, 10)]));
 //   }
 
-//   // // Basic text search (prefix) — pick one field to index/order.
-//   // // Here we use nameLower primarily, and fall back to emailLower if you want a second query (see alt below).
-//   // // Firestore requires range filters to match the same orderBy field.
-
 //   let didApplySearch = false;
+
 //   if (params.search && params.search.trim()) {
-//     const s = params.search.trim();
-//     constraints.push(where("agent_name", ">=", s));
-//     constraints.push(where("agent_name", "<=", s + "\uf8ff"));
-//     constraints.push(orderBy("agent_name", "asc"));
-//     didApplySearch = true
-//   }
-//   // // // If no search ordering applied, set a default order for stable pagination
-//   if (!didApplySearch) {
-//     constraints.push(orderBy("createdAt", "desc"));
+//     const s = params.search.trim().toLowerCase(); // normalize query
+
+//     constraints.push(where("agent_name_lc", ">=", s));
+//     constraints.push(where("agent_name_lc", "<=", s + "\uf8ff"));
+//     constraints.push(orderBy("agent_name_lc", "asc"));
+
+//     constraints.push(where("email", ">=", s));
+//     constraints.push(where("email", "<=", s + "\uf8ff"));
+//     constraints.push(orderBy("email", "asc"));
+//     didApplySearch = true;
 //   }
 
+//   if (!didApplySearch) constraints.push(orderBy("createdAt", "desc"));
+//   if (params.limitBy) constraints.push(qLimit(params.limitBy));
+//   if (cursor != null) constraints.push(startAfter(cursor));
 
-//   // Limit
-//   if (params.limitBy) {
-//     constraints.push(qLimit(params.limitBy));
-//   }
-
-//   if (cursor != null) {
-//     constraints.push(startAfter(cursor));
-//   }
 //   const q = query(colRef, ...constraints);
 
 //   return onSnapshot(
 //     q,
 //     (snap) => {
-
-//       const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-//       const nextCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
+//       const rows = snap.docs.map((d) => {
+//         const data = d.data();
+//         return {
+//           id: d.id,
+//           ...data,
+//           agentIdFormatted: formatAgentId(d.id), // ✅ add formatted Agent ID
+//         };
+//       });
+//       const nextCursor = snap.docs.length
+//         ? snap.docs[snap.docs.length - 1]
+//         : null;
 //       onData(rows, nextCursor);
 //     },
 //     (err) => {
-//       if (onError) onError(err);
-//       else console.error("Agents listener error:", err);
+//       if (onError) console.error("Agents listener error:", err);
 //     }
 //   );
 // }
 
+
 export function listAgents(params = {}, onData, onError, cursor = null) {
   const colRef = collection(getFirestore() || db, "agents");
-  const constraints = [];
 
-  if (params.company_id) {
-    constraints.push(where("company_Id", "==", params.company_id));
-  }
-  if (typeof params.status === "number") {
-    constraints.push(where("status", "==", params.status));
-  }
+  // Build base constraints shared by both queries
+  const base = [];
+  if (params.company_id) base.push(where("company_Id", "==", params.company_id));
+  if (typeof params.status === "number") base.push(where("status", "==", params.status));
   if (Array.isArray(params.zone) && params.zone.length > 0) {
-    constraints.push(where("zone", "in", [params.zone.slice(0, 10)]));
+    base.push(where("zone", "in", params.zone.slice(0, 10)));
   }
 
-  let didApplySearch = false;
+  // Helper: format row
+  const toRow = (d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      agentIdFormatted: formatAgentId(d.id),
+    };
+  };
+
+  // MULTI-FIELD, CASE-INSENSITIVE SEARCH (name + email)
   if (params.search && params.search.trim()) {
-    const s = params.search.trim();
-    constraints.push(where("agent_name", ">=", s));
-    constraints.push(where("agent_name", "<=", s + "\uf8ff"));
-    constraints.push(orderBy("agent_name", "asc"));
-    didApplySearch = true;
+    const s = params.search.trim().toLowerCase();
+
+    // Optional limit applied to each branch; the union may exceed this count.
+    const lim = params.limitBy ? [qLimit(params.limitBy)] : [];
+
+    // Prefix query using orderBy + startAt/endAt is equivalent to >= s && <= s+'\uf8ff'
+    const qName = query(
+      colRef,
+      ...base,
+      orderBy("agent_name_lc"),
+      startAt(s),
+      endAt(s + "\uf8ff"),
+      ...lim
+    );
+
+    const qEmail = query(
+      colRef,
+      ...base,
+      orderBy("email_lc"),
+      startAt(s),
+      endAt(s + "\uf8ff"),
+      ...lim
+    );
+
+    // Keep last snapshots and emit the merged union
+    let lastNameDocs = new Map();
+    let lastEmailDocs = new Map();
+
+    const emit = () => {
+      // Merge by id
+      const merged = new Map([...lastNameDocs, ...lastEmailDocs]);
+      let rows = Array.from(merged.values()).map(toRow);
+
+      // Sort: prioritize name match, then email match, then createdAt desc (if available)
+      rows.sort((a, b) => {
+        const aNameStarts = a.agent_name_lc?.startsWith(s) ? 0 : 1;
+        const bNameStarts = b.agent_name_lc?.startsWith(s) ? 0 : 1;
+        if (aNameStarts !== bNameStarts) return aNameStarts - bNameStarts;
+
+        const aEmailStarts = a.email_lc?.startsWith(s) ? 0 : 1;
+        const bEmailStarts = b.email_lc?.startsWith(s) ? 0 : 1;
+        if (aEmailStarts !== bEmailStarts) return aEmailStarts - bEmailStarts;
+
+        const aTs = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const bTs = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+        return bTs - aTs; // newest first
+      });
+
+      // If you want an overall limit on the merged set:
+      if (params.limitBy) rows = rows.slice(0, params.limitBy);
+
+      // Pagination is disabled for merged search results
+      onData(rows, null);
+    };
+
+    const unsubName = onSnapshot(
+      qName,
+      (snap) => {
+        lastNameDocs = new Map(snap.docs.map((d) => [d.id, d]));
+        emit();
+      },
+      // (err) => (onError ? onError(err) : console.error("Agents listener (name) error:", err))
+      (err) => console.error("Agents listener (name) error:", err)
+    );
+
+    const unsubEmail = onSnapshot(
+      qEmail,
+      (snap) => {
+        lastEmailDocs = new Map(snap.docs.map((d) => [d.id, d]));
+        emit();
+      },
+      // (err) => (onError ? onError(err) : console.error("Agents listener (email) error:", err))
+      (err) => console.error("Agents listener (name) error:", err)
+
+    );
+
+    // Return a combined unsubscribe
+    return () => {
+      try { unsubName(); } catch { }
+      try { unsubEmail(); } catch { }
+    };
   }
-  if (!didApplySearch) constraints.push(orderBy("createdAt", "desc"));
+
+  // DEFAULT (no search): single query with ordering + optional pagination
+  const constraints = [...base, orderBy("createdAt", "desc")];
   if (params.limitBy) constraints.push(qLimit(params.limitBy));
   if (cursor != null) constraints.push(startAfter(cursor));
 
@@ -306,17 +391,8 @@ export function listAgents(params = {}, onData, onError, cursor = null) {
   return onSnapshot(
     q,
     (snap) => {
-      const rows = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          ...data,
-          agentIdFormatted: formatAgentId(d.id), // ✅ add formatted Agent ID
-        };
-      });
-      const nextCursor = snap.docs.length
-        ? snap.docs[snap.docs.length - 1]
-        : null;
+      const rows = snap.docs.map(toRow);
+      const nextCursor = snap.docs.length ? snap.docs[snap.docs.length - 1] : null;
       onData(rows, nextCursor);
     },
     (err) => {
@@ -325,7 +401,6 @@ export function listAgents(params = {}, onData, onError, cursor = null) {
     }
   );
 }
-
 
 
 

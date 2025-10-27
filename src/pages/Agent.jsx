@@ -16,7 +16,7 @@ import { listenCompanies } from "../FirebaseDB/companies";
 import { listZones } from "../FirebaseDB/zone";
 
 import { useSelector } from "react-redux";
-import { generateTempPassword } from "../utils/password";
+import { generatePassword, generateTempPassword } from "../utils/password";
 
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import ConfirmDialog from "../components/common/ConfirmDialog";
@@ -252,6 +252,9 @@ const Agent = () => {
 					const snap = await getDoc(doc(db, "agents", String(agentId)));
 					if (snap.exists()) {
 						const d = snap.data();
+
+
+
 						setInitialData({
 							agent_name: d.agent_name || "",
 							email: d.email || "",
@@ -276,7 +279,7 @@ const Agent = () => {
 				email: "",
 				zone: [],
 				company_id: "",
-				temp_password: generateTempPassword({ length: 10 }),
+				temp_password: generatePassword(),
 				photo: "",
 				oldPhotoPath: null,
 				status: 1,
@@ -285,6 +288,9 @@ const Agent = () => {
 			});
 		}
 	}, [agentId, open]);
+
+
+
 
 	return (
 		<React.Fragment>

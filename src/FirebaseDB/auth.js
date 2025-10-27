@@ -63,7 +63,6 @@ async function sendPasswordChangeEmail(user) {
   const emailPayload = {
     to: user.email,
     uid: user.uid,
-    // add anything else your API expects, e.g. name: user.displayName
   };
 
   try {

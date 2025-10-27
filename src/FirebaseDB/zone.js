@@ -30,7 +30,11 @@ const toUnit = (u) => (typeof u === "string" ? u.trim().toLowerCase() : null); /
  * Also adds timestamps and an optional GeoPoint for geo queries.
  */
 export function normalizeZone(input = {}) {
+
+
+
   const company_name = String(input.company_name ?? "").trim();
+  const agent_id = input.agent_id;
   const company_Id = String(input.company_Id ?? "").trim();
   const zone_name = String(input.zone_name ?? input.name ?? "").trim();
   const address = String(input.address ?? input.location ?? "").trim();
@@ -51,6 +55,7 @@ export function normalizeZone(input = {}) {
   const payload = {
     company_name,
     zone_name,
+    agent_id,
     address,
     lat,
     lng,
@@ -65,7 +70,6 @@ export function normalizeZone(input = {}) {
     geopoint: new GeoPoint(lat, lng), // helpful for geo queries
     updatedAt: serverTimestamp(),
   };
-
   // createdAt will be set only on create
   return payload;
 }
@@ -82,9 +86,6 @@ export async function createZone(input) {
 
 export async function updateZone(id, input) {
   const payload = normalizeZone(input);
-
-  console.log('pay', payload);
-
 
   await updateDoc(doc(db, "zones", id), payload);
   return id;
@@ -305,3 +306,27 @@ export async function updateZoneStatus(zoneId, nextStatus) {
 
 
 // ************************************************************************************
+
+
+export function getZoneById(zoneId, onData, onError) {
+  if (!zoneId) throw new Error("zoneId is required");
+
+  const ref = doc(getFirestore() || db, "zones", zoneId);
+
+  // Realtime updates
+  return onSnapshot(
+    ref,
+    (snap) => {
+
+      console.log('snap:-', snap);
+
+
+      if (!snap.exists()) {
+        // onData(null); // zone not found
+        return;
+      }
+      return { id: snap.id, ...snap.data() }
+    },
+    (err) => (onError ? onError(err) : console.error("Zone listener error:", err))
+  );
+}

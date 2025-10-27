@@ -108,31 +108,111 @@ function IssuesMenuButton({ count = 0 }) {
 	);
 }
 
+// function ZoneCard({ zone, index }) {
+// 	const hasIssues = zone.observations
+// 		&& zone.observations
+// 			.length > 0;
+
+// 	console.log('zone', zone);
+
+
+// 	return (
+// 		<Paper variant="outlined" sx={{ p: 2, borderRadius: .5 }}>
+// 			<Stack direction="row" alignItems="center" justifyContent="space-between">
+// 				<Box>
+// 					<Typography fontWeight={600}>{zone?.zones[index]?.zone_name}</Typography>
+// 					<Typography variant="body2" color="text.secondary">
+// 						Assigned: {formatTimestamp(zone?.zones[index]?.createdAt)} · Radius: {zone?.zones[index]?.radius_meters}
+// 					</Typography>
+// 				</Box>
+// 				<IssuesMenuButton count={zone.observationsCount} />
+// 			</Stack>
+
+// 			{hasIssues && (
+// 				<TableContainer component={Box} sx={{ mt: 2, borderRadius: 1 }}>
+// 					<Table size="small" aria-label="issues table">
+// 						<TableHead>
+// 							<TableRow sx={{ backgroundColor: (t) => t.palette.error.light + '22' }}>
+// 								<TableCell sx={{ fontWeight: 600 }}>Issue ID</TableCell>
+// 								<TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+// 								<TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+// 								<TableCell align="right" sx={{ fontWeight: 600 }}>
+// 									Actions
+// 								</TableCell>
+// 							</TableRow>
+// 						</TableHead>
+// 						<TableBody>
+// 							{zone.observations
+// 								?.map((i, idx) => (
+// 									<TableRow key={idx} hover>
+// 										<TableCell>{i.id}</TableCell>
+// 										<TableCell>
+// 											<Box>
+// 												{i?.issueType.map((it, i) => (
+// 													<Typography key={`${i.id}-${idx}`} variant="body2">
+// 														{it},
+// 													</Typography>
+// 												))}
+
+// 											</Box>
+// 										</TableCell>
+// 										<TableCell>{i.createdAt}</TableCell>
+// 										<TableCell align="right">
+// 											<Button
+// 												size="small"
+// 												variant="contained"
+// 												disableElevation
+// 												endIcon={<VisibilityOutlinedIcon />}
+// 												sx={{
+// 													textTransform: 'none',
+// 													borderRadius: 999,
+// 													bgcolor: (t) => t.palette.error.main,
+// 													'&:hover': { bgcolor: (t) => t.palette.error.dark },
+// 												}}
+// 											>
+// 												View Detail
+// 											</Button>
+// 										</TableCell>
+// 									</TableRow>
+// 								))}
+// 						</TableBody>
+// 					</Table>
+// 				</TableContainer>
+// 			)}
+// 		</Paper>
+// 	);
+// }
 function ZoneCard({ zone, index }) {
-	const hasIssues = zone.observations
-		&& zone.observations
-			.length > 0;
+	// current zone object
+	const currentZone = zone?.zones?.[index];
+	const zoneId = currentZone?.id || currentZone?.zone_id;
 
-	console.log('zone', zone);
+	// only observations belonging to this zone
+	const observationsForZone = (zone?.observations ?? []).filter(
+		(o) => (o.zoneId || o.zone_id) === zoneId
+	);
 
+	const hasIssues = observationsForZone.length > 0;
 
 	return (
-		<Paper variant="outlined" sx={{ p: 2, borderRadius: .5 }}>
+		<Paper variant="outlined" sx={{ p: 2, borderRadius: 0.5 }}>
 			<Stack direction="row" alignItems="center" justifyContent="space-between">
 				<Box>
-					<Typography fontWeight={600}>{zone?.zones[index]?.zone_name}</Typography>
+					<Typography fontWeight={600}>{currentZone?.zone_name}</Typography>
 					<Typography variant="body2" color="text.secondary">
-						Assigned: {formatTimestamp(zone?.zones[index]?.createdAt)} · Radius: {zone?.zones[index]?.radius_meters}
+						Assigned: {formatTimestamp(currentZone?.createdAt)} · Radius: {currentZone?.radius_meters}
 					</Typography>
 				</Box>
-				<IssuesMenuButton count={zone.observationsCount} />
+
+				{/* show only the count for this zone */}
+				<IssuesMenuButton count={observationsForZone.length} />
 			</Stack>
 
 			{hasIssues && (
 				<TableContainer component={Box} sx={{ mt: 2, borderRadius: 1 }}>
 					<Table size="small" aria-label="issues table">
 						<TableHead>
-							<TableRow sx={{ backgroundColor: (t) => t.palette.error.light + '22' }}>
+							<TableRow sx={{ backgroundColor: (t) => t.palette.error.light + "22" }}>
 								<TableCell sx={{ fontWeight: 600 }}>Issue ID</TableCell>
 								<TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
 								<TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
@@ -142,39 +222,38 @@ function ZoneCard({ zone, index }) {
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{zone.observations
-								?.map((i, idx) => (
-									<TableRow key={idx} hover>
-										<TableCell>{i.id}</TableCell>
-										<TableCell>
-											<Box>
-												{i?.issueType.map((it, i) => (
-													<Typography key={`${i.id}-${idx}`} variant="body2">
-														{it},
-													</Typography>
-												))}
-
-											</Box>
-										</TableCell>
-										<TableCell>{i.createdAt}</TableCell>
-										<TableCell align="right">
-											<Button
-												size="small"
-												variant="contained"
-												disableElevation
-												endIcon={<VisibilityOutlinedIcon />}
-												sx={{
-													textTransform: 'none',
-													borderRadius: 999,
-													bgcolor: (t) => t.palette.error.main,
-													'&:hover': { bgcolor: (t) => t.palette.error.dark },
-												}}
-											>
-												View Detail
-											</Button>
-										</TableCell>
-									</TableRow>
-								))}
+							{observationsForZone.map((obs) => (
+								<TableRow key={obs.id} hover>
+									<TableCell>{obs.id}</TableCell>
+									<TableCell>
+										<Box>
+											{(obs.issueType ?? []).map((it, i) => (
+												<Typography key={`${obs.id}-${i}`} variant="body2" component="span">
+													{i > 0 ? ", " : ""}
+													{it}
+												</Typography>
+											))}
+										</Box>
+									</TableCell>
+									<TableCell>{formatTimestamp(obs.createdAt)}</TableCell>
+									<TableCell align="right">
+										<Button
+											size="small"
+											variant="contained"
+											disableElevation
+											endIcon={<VisibilityOutlinedIcon />}
+											sx={{
+												textTransform: "none",
+												borderRadius: 999,
+												bgcolor: (t) => t.palette.error.main,
+												"&:hover": { bgcolor: (t) => t.palette.error.dark },
+											}}
+										>
+											View Detail
+										</Button>
+									</TableCell>
+								</TableRow>
+							))}
 						</TableBody>
 					</Table>
 				</TableContainer>

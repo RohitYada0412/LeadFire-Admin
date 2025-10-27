@@ -7,16 +7,22 @@ import { useSelector } from "react-redux";
 import ZoneDialog from "../components/zone/AddNew";
 import ZoneTable from "../components/zone/ZoneComponent";
 import { getCompanyById } from "../FirebaseDB/companies";
-import { listZones, updateZoneStatus } from "../FirebaseDB/zone";
+import { getZoneById, listZones, updateZoneStatus } from "../FirebaseDB/zone";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import { doc, getDoc, getFirestore } from "firebase/firestore";
+import { listAgents } from "../FirebaseDB/agent";
+import { generatePassword } from "../utils/password";
 
 const Zone = () => {
 
 	const { isUser } = useSelector((state) => state.auth)
+	const db = getFirestore();
+
 
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [rows, setRows] = useState([])
+	const [rowAgent, setRowAgent] = useState([])
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [openConfirm, setOpenConfirm] = useState(false);
 	const [status, setStatus] = useState({})
@@ -57,12 +63,7 @@ const Zone = () => {
 
 		if (filterData.status !== "" && filterData.status != null)
 			p.status = Number(filterData.status);
-
-		// if (Array.isArray(filterData.zone) && filterData.zone.length > 0) {
-		// 	p.zone = filterData.zone.map(String);
-		// }
 		if (debouncedSearch) p.search = debouncedSearch;
-
 		return p;
 	}, [filterData.status, debouncedSearch]);
 
@@ -91,8 +92,6 @@ const Zone = () => {
 		})
 	}
 
-
-
 	const handleSelectConfirm = async (id, nextStatus) => {
 		const prevRow = rows.find(r => r.id === id);
 		const prevStatus = prevRow?.status;
@@ -110,16 +109,54 @@ const Zone = () => {
 		}
 	};
 
+	useEffect(() => {
+		if (!open || !companyId) return;
+		let cancelled = false;
 
+		(async () => {
+			try {
+				const ref = doc(getFirestore() || db, "zones", String(companyId));
+				const snap = await getDoc(ref);
+				if (!cancelled && snap.exists()) {
+					const d = snap.data();
+					console.log("zone:", d);
+					setInitialData(d)
+					// setState here if needed, e.g. setZone({ id: snap.id, ...d });
+				}
+			} catch (error) {
+				console.error("Failed to load zone:", error);
+			}
+		})();
 
+		return () => {
+			cancelled = true;
+		};
+	}, [open, companyId]);
 
 	useEffect(() => {
-		if (open && companyId) {
-			getCompanyById(companyId).then((companyDetail) => {
-				setInitialData(companyDetail)
-			})
-		}
-	}, [companyId, open])
+		let cancelled = false;
+		(async () => {
+			setLoading(true);
+			try {
+				const { rows } = await listAgents(
+					agentParams,
+					(docs) => {
+						setRowAgent(docs);
+						setLoading(false);
+					},
+
+					{ cursor: null, pageSize: PAGE_SIZE }
+				);
+				if (cancelled) return;
+				setRowAgent(rows);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [agentParams]);
 
 	return (
 		<React.Fragment>
@@ -207,12 +244,9 @@ const Zone = () => {
 					setInitialData={setInitialData}
 					setCompanyId={setCompanyId}
 					onClose={() => setOpen(false)}
-
+					rowAgent={rowAgent}
 					onSubmitZone={(z) => {
 						console.log('z :-', z);
-						// z = { name, location, center:{lat,lng}, radiusValue, radiusUnit, radiusMeters }
-						// -> create or update in Firestore as you like
-						// e.g. createZone(z) or updateZone(id, z)
 					}}
 
 				/>
