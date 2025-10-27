@@ -1,0 +1,31 @@
+:root {
+  /* --sidebar-w: 280px; */
+}
+html, body, #root {
+  height: 100%;
+}
+body { margin: 0; }
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  border-right: 1px solid rgba(255,255,255,0.08);
+  padding: 24px;
+}
+.brand {
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+.main { padding: 24px; }
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}

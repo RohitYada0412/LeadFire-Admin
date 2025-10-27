@@ -1,0 +1,55 @@
+@import url("./colors.css");
+
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: "Poppins", sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* start scrollbar */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary-main);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: var(--primary-main);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fff;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+/* End scrollbar */
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -webkit-appearance: none;
+  appearance: none;
+  -moz-appearance: textfield;
+}
