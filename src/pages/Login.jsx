@@ -86,7 +86,7 @@ export default function Login() {
 								}}
 							/>
 
-							<Box
+							{/* <Box
 								sx={{
 									position: 'relative',
 									// maxWidth: { xs: 520, md: 560 },
@@ -122,7 +122,7 @@ export default function Login() {
 								>
 									Manage agents, zones, and issues securely.
 								</Typography>
-							</Box>
+							</Box> */}
 						</Box>
 					</Grid2>
 					<Grid2 size={{ xs: 12, md: 6 }}><Box

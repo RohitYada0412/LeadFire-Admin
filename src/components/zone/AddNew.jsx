@@ -146,18 +146,27 @@ export default function ZoneDialog({
           pb: 0.5,
         }}
       >
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
           {initialData?.id ? "Edit Zone" : "Add Zone"}
         </Typography>
+
+
+
         <IconButton size="small" onClick={() => {
           setInitialData({})
           setCompanyId(null)
           onClose()
         }}>
           <CloseIcon />
-        </IconButton>
-      </DialogTitle>
 
+        </IconButton>
+
+      </DialogTitle>
+      <Typography fontWeight={300}>
+        Update the zone's location or coverage area. Instructions: Enter a new address
+        to change the zone's center point, or adjust the range in miles to resize the
+        area. Verify the updated zone on the map, then click Save Changes to finish.
+      </Typography>
       <Formik
         initialValues={defaults}
         enableReinitialize
@@ -220,7 +229,7 @@ export default function ZoneDialog({
                   />
                 </Stack>
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Assign Agent</Typography>
                   <Autocomplete
                     multiple
                     disableCloseOnSelect
@@ -240,7 +249,7 @@ export default function ZoneDialog({
                       <TextField
                         {...params}
                         // label="Select Zone"
-                        placeholder="Search or select zones…"
+                        placeholder="Search or select agent (Optional)"
                       />
                     )}
                   />

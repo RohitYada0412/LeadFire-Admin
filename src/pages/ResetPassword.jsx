@@ -101,7 +101,7 @@ export default function ResetPassword() {
 								}}
 							/>
 
-							<Box
+							{/* <Box
 								sx={{
 									position: "relative",
 									textAlign: { xs: "center", md: "left" },
@@ -127,7 +127,7 @@ export default function ResetPassword() {
 								<Typography variant="body1" sx={{ color: "rgba(30,37,45,0.70)", position: "relative", zIndex: 1 }}>
 									Manage agents, zones, and issues securely.
 								</Typography>
-							</Box>
+							</Box> */}
 						</Box>
 					</Grid2>
 

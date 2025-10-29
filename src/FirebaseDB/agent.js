@@ -60,12 +60,15 @@ function formatAgentId(value) {
 
 /** Create agent with provided UID as doc id and update company count */
 export async function createAgent(data) {
-  const agent_name = String(data?.agent_name ?? "").trim();
+  // const agent_name = String(data?.agent_name ?? "").trim();
+  const first_name = String(data?.first_name ?? "").trim();
+  const last_name = String(data?.last_name ?? "").trim();
   const email = String(data?.email ?? "").trim().toLowerCase();
   const uid = String(data?.id ?? data?.uid ?? "").trim(); // <- UID becomes doc ID
 
   if (!uid) throw new Error("UID is required.");
-  if (!agent_name) throw new Error("Agent name is required.");
+  if (!first_name) throw new Error("first name is required.");
+  if (!last_name) throw new Error("last name is required.");
   if (!email) throw new Error("Email is required.");
 
   // 1) Ensure no other agent uses this email
@@ -80,9 +83,11 @@ export async function createAgent(data) {
   // 3) Build payload
   const payload = {
     id: uid,
-    agent_name,
+    first_name,
+    last_name,
+    agent_name:data.agent_name,
     email,
-    agent_name_lc: agent_name.toLowerCase(),
+    agent_name_lc: data.agent_name.toLowerCase(),
     email_lc: email,
     status: Number(data?.status) || 1,
     zone: data?.zone || [],
@@ -152,6 +157,8 @@ export async function updateAgent(agentId, data) {
   const patch = {
     ...(data?.agent_name != null && {
       agent_name: data.agent_name,
+      first_name: data.first_name,
+      last_name: data.last_name,
       phone_number: data.phone_number,
       agent_name_lc: String(data.agent_name).trim().toLowerCase(),
     }),

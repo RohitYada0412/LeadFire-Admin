@@ -85,7 +85,7 @@ export async function createCompany(data) {
   await setDoc(
     companyRef,
     {
-      company_name,
+      company_name,     
       email,
       company_name_lc: company_name.toLowerCase(),
       email_lc: email,
@@ -101,6 +101,9 @@ export async function createCompany(data) {
       loginCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+       phone_number:data?.phone_number,
+      last_name:data?.last_name,
+      first_name:data?.first_name,
     },
     { merge: false }
   );
@@ -232,9 +235,6 @@ export function listenCompanies(params, cb) {
       const data = d.data();
 
       const valueToFormat = formatFromField ? data?.[formatFromField] : id;
-
-
-
       const companyIdFormatted = formatCompanyId(valueToFormat);
 
 

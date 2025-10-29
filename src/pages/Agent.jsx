@@ -61,6 +61,8 @@ const Agent = () => {
 
 	const [initialData, setInitialData] = useState({
 		agent_name: "",
+		first_name: "",
+		last_name:"",
 		email: "",
 		zone: [],
 		company_id: "",
@@ -252,9 +254,6 @@ const Agent = () => {
 					const snap = await getDoc(doc(db, "agents", String(agentId)));
 					if (snap.exists()) {
 						const d = snap.data();
-
-
-
 						setInitialData({
 							agent_name: d.agent_name || "",
 							email: d.email || "",
@@ -266,7 +265,9 @@ const Agent = () => {
 							status: d.status ?? 1,
 							user_name: d.user_name ?? "agent",
 							user_type: d.user_type ?? 3,
-							phone_number: d.phone_number
+							phone_number: d.phone_number,
+							last_name: d.last_name,
+							first_name: d.first_name,
 						});
 					}
 				} catch (e) {

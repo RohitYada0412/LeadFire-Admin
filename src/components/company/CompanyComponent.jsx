@@ -67,6 +67,7 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Company ID</StyledTableCell>
+							
 							<StyledTableCell>Company</StyledTableCell>
 							<StyledTableCell>Email</StyledTableCell>
 							{/* <StyledTableCell align="center">Zone</StyledTableCell> */}
@@ -81,6 +82,8 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 						{data?.length > 0 ? data.map((r) => {
 							const selectId = `status-select-${r.id}`;
 							const labelId = `status-label-${r.id}`;
+							console.log(r);
+							
 							return (
 								<StyledTableRow key={r.id}>
 									<StyledTableCell>{r.companyIdFormatted}</StyledTableCell>

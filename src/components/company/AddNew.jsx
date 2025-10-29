@@ -17,7 +17,10 @@ import { createCompany, updateCompany } from "../../FirebaseDB/companies";
 import { signUpWithRole } from "../../FirebaseDB/resolveUserContext";
 
 const schema = Yup.object({
-	company_name: Yup.string().trim().required("Company name is required"),
+	company_name: Yup.string().trim().required("Company Name is required"),
+	first_name: Yup.string().trim().required("Contact First Name is required"),
+	last_name: Yup.string().trim().required("Contact Last Name is required"),
+	phone_number: Yup.string().trim().required("Company Phone Number is required"),
 	email: Yup.string().trim().email("Enter a valid email").required("Email is required"),
 });
 
@@ -52,7 +55,7 @@ export default function AddCompanyDialog({
 				sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 0 }}
 			>
 				<Typography variant="h6" fontWeight={700}>
-					Add New Company
+					{companyId ? "Edit Company" : 'Add New Company'}
 				</Typography>
 				<IconButton onClick={handleClosePop} size="small">
 					<CloseIcon />
@@ -64,8 +67,8 @@ export default function AddCompanyDialog({
 			<Formik
 				initialValues={initialData}
 				enableReinitialize={true}
-
 				validationSchema={schema}
+
 				onSubmit={async (values, helpers) => {
 					try {
 						if (companyId) {
@@ -137,10 +140,10 @@ export default function AddCompanyDialog({
 							<Stack direction='column'>
 								<Typography variant="body1">Company Name</Typography>
 								<TextField
-									placeholder="Enter your company name"
+									placeholder="Enter Company Name"
 									fullWidth
 									margin="normal"
-									autoFocus
+									// autoFocus
 									{...getFieldProps("company_name")}
 									error={touched.company_name && Boolean(errors.company_name)}
 									helperText={touched.company_name && errors.company_name}
@@ -148,10 +151,52 @@ export default function AddCompanyDialog({
 							</Stack>
 
 							<Stack direction='column'>
-								<Typography variant="body1">Email Address</Typography>
+								<Typography variant="body1">Contact First Name</Typography>
+								<TextField
+									placeholder="Enter Contact First Name"
+									fullWidth
+									margin="normal"
+									// autoFocus
+									{...getFieldProps("first_name")}
+									error={touched.first_name && Boolean(errors.first_name)}
+									helperText={touched.first_name && errors.first_name}
+
+								// error={touched.first_name && Boolean(errors.first_name)}
+								// helperText={touched.first_name && errors.first_name}
+								/>
+							</Stack>
+
+							<Stack direction='column'>
+								<Typography variant="body1">Contact Last Name</Typography>
+								<TextField
+									placeholder="Enter Contact Last Name"
+									fullWidth
+									margin="normal"
+									autoFocus
+									{...getFieldProps("last_name")}
+									error={touched.last_name && Boolean(errors.last_name)}
+									helperText={touched.last_name && errors.last_name}
+								/>
+							</Stack>
+
+							<Stack direction='column'>
+								<Typography variant="body1">Company Phone Number</Typography>
+								<TextField
+									placeholder="Enter Company Phone Number"
+									fullWidth
+									margin="normal"
+									autoFocus
+									{...getFieldProps("phone_number")}
+									error={touched.phone_number && Boolean(errors.phone_number)}
+									helperText={touched.phone_number && errors.phone_number}
+								/>
+							</Stack>
+
+							<Stack direction='column'>
+								<Typography variant="body1">Company Admin Email</Typography>
 								<TextField
 									label=""
-									placeholder="Enter your email"
+									placeholder="Email Company Admin Email"
 									fullWidth
 									margin="normal"
 									{...getFieldProps("email")}
@@ -161,6 +206,7 @@ export default function AddCompanyDialog({
 								/>
 
 							</Stack>
+
 
 							{/* <Stack direction='column'>
 								<Typography variant="body1">Temporary Password</Typography>

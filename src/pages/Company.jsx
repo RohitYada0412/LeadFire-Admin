@@ -22,7 +22,10 @@ const Company = () => {
 		email: "",
 		temp_password: generateTempPassword({ length: 10 }),
 		user_name: 'company',
-		user_type: 2
+		user_type: 2,
+		first_name:'',
+		last_name:'',
+		phone_number:''
 	})
 	const [companyId, setCompanyId] = useState('')
 	const handleClickOpen = () => setOpen(true);
@@ -185,7 +188,7 @@ const Company = () => {
 
 
 
-			<ResponsiveCompanyTable
+		<ResponsiveCompanyTable
 				data={rows}
 				loading={loading}
 				setStatus={handleSelect}

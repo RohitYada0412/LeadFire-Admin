@@ -27,7 +27,8 @@ const phoneYup = Yup.string()
   });
 
 const schema = Yup.object({
-  agent_name: Yup.string().trim().required("Agent name is required"),
+  first_name: Yup.string().trim().required("Agent First Name is required"),
+  last_name: Yup.string().trim().required("Agent Last Name is required"),
   email: Yup.string().trim().email("Enter a valid email").required("Email is required"),
   zone: Yup.mixed().required("Zone is required"),
   phone_number: phoneYup
@@ -81,7 +82,7 @@ export default function AddCompanyDialog({
   }, [companyId])
 
 
-
+console.log(initialData)
 
 
   return (
@@ -95,13 +96,15 @@ export default function AddCompanyDialog({
         enableReinitialize
         initialValues={{
           agent_name: initialData?.agent_name || "",
+          first_name: initialData?.first_name || "",
+          last_name: initialData?.last_name || "",
           email: initialData?.email || "",
           zone: initialData?.zone || "",
           company_id: '',
           temp_password: initialData?.temp_password || "",
           password: "",
           status: initialData?.status ?? 1,
-          user_name: initialData?.user_name ?? "agent",
+          user_name: initialData?.user_name ?? "last",
           user_type: initialData?.user_type ?? 3,
           photo: null,
           oldPhotoPath: initialData?.photoPath || null,
@@ -111,6 +114,7 @@ export default function AddCompanyDialog({
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
           values['company_id'] = JSON.parse(role).user.uid
+          values['agent_name']= values.first_name+values.last_name
           try {
             if (companyId) {
               await updateAgent(String(companyId), values);
@@ -185,20 +189,29 @@ export default function AddCompanyDialog({
             <DialogContent dividers sx={{ border: "none", pt: 2 }} component="form" onSubmit={handleSubmit}>
               <Stack spacing={1.25}>
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent Name</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent First Name</Typography>
                   <TextField
-                    placeholder="Enter your agent name"
+                    placeholder="Enter agent first name"
                     fullWidth
-                    {...getFieldProps("agent_name")}
-                    error={touched.agent_name && Boolean(errors.agent_name)}
-                    helperText={touched.agent_name && errors.agent_name}
+                    {...getFieldProps("first_name")}
+                    error={touched.first_name && Boolean(errors.first_name)}
+                    helperText={touched.first_name && errors.first_name}
+                  />
+                </Stack><Stack>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent Last Name</Typography>
+                  <TextField
+                    placeholder="Enter agent last name"
+                    fullWidth
+                    {...getFieldProps("last_name")}
+                    error={touched.last_name && Boolean(errors.last_name)}
+                    helperText={touched.last_name && errors.last_name}
                   />
                 </Stack>
 
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Email Address</Typography>
                   <TextField
-                    placeholder="Enter your email"
+                    placeholder="Enter agent email"
                     fullWidth
                     {...getFieldProps("email")}
                     error={touched.email && Boolean(errors.email)}
@@ -210,7 +223,7 @@ export default function AddCompanyDialog({
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Phone Number</Typography>
                   <TextField
-                    placeholder="phone number"
+                    placeholder="Enter phone number"
                     fullWidth
                     {...getFieldProps("phone_number")}
                     error={touched.phone_number && Boolean(errors.phone_number)}

@@ -32,7 +32,7 @@ function DrawerContent({ setOpen, onLogout, isUser }) {
     { text: "Logout", action: "logout", icon: <Iconify icon="humbleicons:logout" width={20} height={20} /> },
   ]
   const companyItem = [
-    { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
+    // { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
     { text: "Agents", to: "/agents", icon: <Iconify icon="mdi:account-tie-outline" width={20} height={20} /> },
     { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
     // { text: "Issues", to: "/issues", icon: <Iconify icon="ph:warning" width={20} height={20} /> },

@@ -164,7 +164,7 @@ export default function VerifyEmail() {
                 }}
               />
 
-              <Box
+              {/* <Box
                 sx={{
                   position: 'relative',
                   // maxWidth: { xs: 520, md: 560 },
@@ -200,7 +200,7 @@ export default function VerifyEmail() {
                 >
                   Manage agents, zones, and issues securely.
                 </Typography>
-              </Box>
+              </Box> */}
             </Box>
           </Grid2>
 

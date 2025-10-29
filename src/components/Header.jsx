@@ -88,7 +88,7 @@ const Header = ({ open, setOpen }) => {
               >
                 {/* {get(headingContent, "[0].label", "")} */}
 
-                {auth?.role === 'admin' ? "Super admin" : 'Company'}
+                {auth?.role === 'admin' ? "Super Admin" : 'Company'}
               </Typography>
 
               {headingContent.length > 0 &&
