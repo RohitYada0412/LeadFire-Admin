@@ -16,6 +16,7 @@ import PrivateRoute from "./routers/PrivateRoute"; // <-- add this
 import SendMail from "./pages/SendMail";
 import ResetPassword from "./pages/ResetPassword";
 import Issues from "./pages/issue";
+import ForgotPassword from "./pages/forgotpassword";
 
 export default function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME;
@@ -25,7 +26,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Outlet />}>
           <Route element={<PublicLayout />}>
-            
+
             <Route
               path="/"
               element={
@@ -41,6 +42,15 @@ export default function App() {
 
                 <PublicRoute>
                   <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="forgot-password"
+              element={
+
+                <PublicRoute>
+                  <ForgotPassword />
                 </PublicRoute>
               }
             />

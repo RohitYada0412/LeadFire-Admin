@@ -78,13 +78,13 @@ function IssuesMenuButton({ count = 0 }) {
 			<Button
 				variant="outlined"
 				size="small"
-				endIcon={<KeyboardArrowDownIcon />}
+				// endIcon={<KeyboardArrowDownIcon />}
 				onClick={(e) => setAnchorEl(e.currentTarget)}
-				sx={{ borderRadius: 999, textTransform: 'none' }}
+				sx={{ borderRadius: 0.8, textTransform: 'none' }}
 			>
 				{count} Issues
 			</Button>
-			<Menu
+			{/* <Menu
 				anchorEl={anchorEl}
 				open={open}
 				onClose={() => setAnchorEl(null)}
@@ -103,7 +103,7 @@ function IssuesMenuButton({ count = 0 }) {
 				<MenuItem onClick={() => setAnchorEl(null)}>
 					<ListItemText>Resolved</ListItemText>
 				</MenuItem>
-			</Menu>
+			</Menu> */}
 		</>
 	);
 }
@@ -366,9 +366,21 @@ export default function AgentDashboard() {
 				<Divider />
 
 				<Stack spacing={2}>
-					{rowData?.zones?.map((z, i) => (
-						<ZoneCard key={i} zone={rowData} index={i} />
-					))}
+					{rowData?.zones?.length > 0 ?
+						rowData?.zones?.map((z, i) => (
+							<ZoneCard key={i} zone={rowData} index={i} />
+						))
+						:
+						<Box sx={{
+							textAlign: 'center',
+							py: 2
+						}}>
+							<Typography variant='body1'>
+
+								No leads have been captured by this agent yet. Once the agent submits leads through the app, they’ll appear here automatically.
+							</Typography>
+						</Box>
+					}
 				</Stack>
 
 			</Card>

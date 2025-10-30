@@ -45,7 +45,6 @@ export default function VerifyEmail() {
     Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000));
 
   useEffect(() => {
-
     if (startedRef.current) return;
     startedRef.current = true;
 
@@ -81,6 +80,7 @@ export default function VerifyEmail() {
     if (secondsLeft === 0) clearTimers();
   }, [secondsLeft]);
 
+
   function startTimers() {
     // high-frequency tick, compute from wall clock
     tickRef.current = setInterval(() => {
@@ -110,7 +110,12 @@ export default function VerifyEmail() {
         return;
       }
 
-      await sendEmailVerification(user);
+      await sendEmailVerification(user,
+        //   {
+        //   url: `${window.location.origin}/login`,
+        //   handleCodeInApp: false,
+        // }
+      );
       toast.info(`Verification link sent to ${user.email}`);
 
       endAtRef.current = Date.now() + VERIFY_WINDOW_SECONDS * 1000;

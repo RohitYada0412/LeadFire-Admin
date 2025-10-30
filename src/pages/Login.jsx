@@ -23,7 +23,7 @@ import * as Yup from 'yup'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 
-import { browserLocalPersistence, browserSessionPersistence, reload, setPersistence, signInWithEmailAndPassword } from 'firebase/auth'
+import { browserLocalPersistence, browserSessionPersistence, fetchSignInMethodsForEmail, reload, setPersistence, signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { setUser } from '../store/features/auth/authSlice'
 
@@ -196,6 +196,16 @@ export default function Login() {
 
 												if (user1.emailVerified === true) {
 													await bumpCompanyLogin(user.uid, user.email || values.email);
+
+
+													// const methods = await fetchSignInMethodsForEmail(auth, values.email);
+													// if (!methods.includes('password')) {
+													// 	toast.warn('This account does not have a password. Redirecting...');
+													// 	navigate('/forgot-password');
+													// 	return;
+													// }
+
+
 
 													dispatch(setUser({
 														uid: user.uid, email: user.email,

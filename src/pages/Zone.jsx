@@ -204,10 +204,10 @@ const Zone = () => {
 								}}
 							>
 								<MenuItem value={0} disabled>
-									Status
+									All
 								</MenuItem>
-								<MenuItem value={1}>Active</MenuItem>
-								<MenuItem value={2}>Inactive</MenuItem>
+								<MenuItem value={1}>Assigned</MenuItem>
+								<MenuItem value={2}>Not Assigned</MenuItem>
 							</Select>
 						</FormControl>
 					</Grid2>

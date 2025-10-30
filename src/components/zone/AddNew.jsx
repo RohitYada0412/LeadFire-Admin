@@ -65,7 +65,8 @@ export default function ZoneDialog({
   initialData,
   setInitialData,
   setCompanyId,
-  rowAgent
+  rowAgent,
+  companyId
 }) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY, // <-- set this
@@ -147,7 +148,7 @@ export default function ZoneDialog({
         }}
       >
         <Typography variant="h6" fontWeight={700} gutterBottom>
-          {initialData?.id ? "Edit Zone" : "Add Zone"}
+          {companyId ? "Edit Zone" : "Add Zone"}
         </Typography>
 
 
@@ -162,11 +163,7 @@ export default function ZoneDialog({
         </IconButton>
 
       </DialogTitle>
-      <Typography fontWeight={300}>
-        Update the zone's location or coverage area. Instructions: Enter a new address
-        to change the zone's center point, or adjust the range in miles to resize the
-        area. Verify the updated zone on the map, then click Save Changes to finish.
-      </Typography>
+
       <Formik
         initialValues={defaults}
         enableReinitialize
@@ -178,8 +175,6 @@ export default function ZoneDialog({
 
           values['company_name'] = auth?.user?.role
           values['company_Id'] = auth?.user?.uid
-
-          console.log('values', values);
 
           try {
             if (initialData?.id) {
@@ -213,6 +208,14 @@ export default function ZoneDialog({
               component="form"
               onSubmit={handleSubmit}
             >
+              <Box sx={{ py: 1 }}>
+                <Typography variant="caption">
+                  Update the zone's location or coverage area. Instructions: Enter a new address
+                  to change the zone's center point, or adjust the range in miles to resize the
+                  area. Verify the updated zone on the map, then click Save Changes to finish.
+                </Typography>
+              </Box>
+
               <Stack spacing={1.5}>
                 {/* Zone Name */}
                 <Stack>
@@ -232,7 +235,7 @@ export default function ZoneDialog({
                 </Stack>
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>Assign Agent
-                    
+
                   </Typography>
                   <Autocomplete
                     multiple
@@ -333,41 +336,27 @@ export default function ZoneDialog({
                   </Grid2>
                 </Stack>
 
-                {/* Map */}
-                <Box
-                  sx={{
-                    mt: 1,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    height: 180,
-                    bgcolor: "grey.100",
-                  }}
-                >
-                  {!isLoaded ? (
-                    <Skeleton variant="rectangular" height={180} />
-                  ) : values.center ? (
-                    <GoogleMap
-                      key={`${values.center.lat},${values.center.lng}`} // helps force a re-mount when center changes
-                      onLoad={handleMapLoad}
-                      mapContainerStyle={{ width: "100%", height: "100%" }}
-                      center={values.center}
-                      zoom={13}
-                      options={mapOptions}
-                      onClick={(e) => {
-                        const lat = e.latLng?.lat();
-                        const lng = e.latLng?.lng();
-                        if (typeof lat === "number" && typeof lng === "number") {
-                          setFieldValue("center", { lat, lng });
-                          setFieldValue("lat", lat);
-                          setFieldValue("lng", lng);
-                          mapRef.current?.panTo({ lat, lng });
-                        }
-                      }}
-                    >
-                      <Marker
-                        position={values.center}
-                        draggable
-                        onDragEnd={(e) => {
+                {values.center.lat && values.center.lng
+                  && <Box
+                    sx={{
+                      mt: 1,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      height: 180,
+                      bgcolor: "grey.100",
+                    }}
+                  >
+                    {!isLoaded ? (
+                      <Skeleton variant="rectangular" height={180} />
+                    ) : values.center ? (
+                      <GoogleMap
+                        key={`${values.center.lat},${values.center.lng}`} // helps force a re-mount when center changes
+                        onLoad={handleMapLoad}
+                        mapContainerStyle={{ width: "100%", height: "100%" }}
+                        center={values.center}
+                        zoom={13}
+                        options={mapOptions}
+                        onClick={(e) => {
                           const lat = e.latLng?.lat();
                           const lng = e.latLng?.lng();
                           if (typeof lat === "number" && typeof lng === "number") {
@@ -377,18 +366,32 @@ export default function ZoneDialog({
                             mapRef.current?.panTo({ lat, lng });
                           }
                         }}
-                      />
-                      <Circle
-                        center={values.center}
-                        radius={toMeters(
-                          values.radius_value || 0,
-                          values.radius_unit
-                        )}
-                        options={circleOptions}
-                      />
-                    </GoogleMap>
-                  ) : null}
-                </Box>
+                      >
+                        <Marker
+                          position={values.center}
+                          draggable
+                          onDragEnd={(e) => {
+                            const lat = e.latLng?.lat();
+                            const lng = e.latLng?.lng();
+                            if (typeof lat === "number" && typeof lng === "number") {
+                              setFieldValue("center", { lat, lng });
+                              setFieldValue("lat", lat);
+                              setFieldValue("lng", lng);
+                              mapRef.current?.panTo({ lat, lng });
+                            }
+                          }}
+                        />
+                        <Circle
+                          center={values.center}
+                          radius={toMeters(
+                            values.radius_value || 0,
+                            values.radius_unit
+                          )}
+                          options={circleOptions}
+                        />
+                      </GoogleMap>
+                    ) : null}
+                  </Box>}
               </Stack>
             </DialogContent>
 
@@ -407,12 +410,12 @@ export default function ZoneDialog({
                 }}
                 onClick={handleSubmit}
               >
-                {initialData?.id ? "Update" : "Add"}
+                {companyId ? "Update Zone" : "Add Zone"}
               </Button>
             </DialogActions>
           </>
         )}
       </Formik>
-    </Dialog>
+    </Dialog >
   );
 }

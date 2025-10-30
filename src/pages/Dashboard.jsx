@@ -37,16 +37,14 @@ const StatCard = ({ label, value, actionIcon }) => (
 
 export default function Dashboard() {
 
-  const {role} = JSON.parse(localStorage.getItem("auth")); // <-- get role
-  console.log('role',role);
-  
+  const { role } = JSON.parse(localStorage.getItem("auth"));
 
 
   // ----------------- COMPANY VIEW -------------------
   if (role === "company") {
     return (
       <Stack spacing={3} sx={{ p: 3 }}>
-        
+
 
         <Stack
           spacing={2}

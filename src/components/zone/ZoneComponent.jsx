@@ -1,5 +1,4 @@
 import {
-	Avatar,
 	Box,
 	Button,
 	FormControl,
@@ -18,7 +17,6 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-import { formatTimestamp } from '../../utils/service';
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -100,8 +98,8 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 													setStatus(r.id, next);
 												}}
 											>
-												<MenuItem value={1}>Active</MenuItem>
-												<MenuItem value={2}>Inactive</MenuItem>
+												<MenuItem value={1}>Assigned</MenuItem>
+												<MenuItem value={2}>Not Assigned</MenuItem>
 											</Select>
 										</FormControl>
 									</StyledTableCell>
