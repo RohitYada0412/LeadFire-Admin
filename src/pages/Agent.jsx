@@ -62,7 +62,7 @@ const Agent = () => {
 	const [initialData, setInitialData] = useState({
 		agent_name: "",
 		first_name: "",
-		last_name:"",
+		last_name: "",
 		email: "",
 		zone: [],
 		company_id: "",
@@ -330,7 +330,7 @@ const Agent = () => {
 				>
 					{/* Zones */}
 					<Grid2>
-						<FormControl size="small">
+						{/* <FormControl size="small">
 							<Select
 								multiple
 								value={filterData.zone}
@@ -354,7 +354,7 @@ const Agent = () => {
 									</MenuItem>
 								))}
 							</Select>
-						</FormControl>
+						</FormControl> */}
 					</Grid2>
 
 					{/* Status */}
@@ -371,7 +371,7 @@ const Agent = () => {
 								displayEmpty
 								sx={{ minWidth: 140 }}
 							>
-								<MenuItem value="">All Status</MenuItem>
+								<MenuItem value="" disabled>Status</MenuItem>
 								<MenuItem value={1}>Active</MenuItem>
 								<MenuItem value={2}>Inactive</MenuItem>
 							</Select>

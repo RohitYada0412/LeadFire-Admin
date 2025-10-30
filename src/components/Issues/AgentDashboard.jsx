@@ -184,7 +184,7 @@ export default function AgentDashboard() {
 							Agent ID : <Typography component="span" color="text.primary"> {agent.id}</Typography>
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
-							Date Joined : <Typography component="span" color="text.primary"> {agent.joined}</Typography>
+							Date Added : <Typography component="span" color="text.primary"> {agent.joined}</Typography>
 						</Typography>
 					</Box>
 

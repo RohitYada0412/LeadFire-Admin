@@ -163,7 +163,7 @@ const Company = () => {
 								}}
 							>
 								<MenuItem value={0} disabled>
-									All Status
+									Status
 								</MenuItem>
 								<MenuItem value={1}>Active</MenuItem>
 								<MenuItem value={2}>Inactive</MenuItem>

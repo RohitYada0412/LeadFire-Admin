@@ -199,9 +199,9 @@ function ZoneCard({ zone, index }) {
 			<Stack direction="row" alignItems="center" justifyContent="space-between">
 				<Box>
 					<Typography fontWeight={600}>{currentZone?.zone_name}</Typography>
-					<Typography variant="body2" color="text.secondary">
+					{/* <Typography variant="body2" color="text.secondary">
 						Assigned: {formatTimestamp(currentZone?.createdAt)} · Radius: {currentZone?.radius_meters}
-					</Typography>
+					</Typography> */}
 				</Box>
 
 				{/* show only the count for this zone */}
@@ -213,18 +213,18 @@ function ZoneCard({ zone, index }) {
 					<Table size="small" aria-label="issues table">
 						<TableHead>
 							<TableRow sx={{ backgroundColor: (t) => t.palette.error.light + "22" }}>
-								<TableCell sx={{ fontWeight: 600 }}>Issue ID</TableCell>
-								<TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+								<TableCell sx={{ fontWeight: 600 }}>Lead Address</TableCell>
+								<TableCell sx={{ fontWeight: 600 }}>Issues Captured</TableCell>
 								<TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
-								<TableCell align="right" sx={{ fontWeight: 600 }}>
+								{/* <TableCell align="right" sx={{ fontWeight: 600 }}>
 									Actions
-								</TableCell>
+								</TableCell> */}
 							</TableRow>
 						</TableHead>
 						<TableBody>
 							{observationsForZone.map((obs) => (
 								<TableRow key={obs.id} hover>
-									<TableCell>{obs.id}</TableCell>
+									<TableCell>{obs.address}</TableCell>
 									<TableCell>
 										<Box>
 											{(obs.issueType ?? []).map((it, i) => (
@@ -236,7 +236,7 @@ function ZoneCard({ zone, index }) {
 										</Box>
 									</TableCell>
 									<TableCell>{formatTimestamp(obs.createdAt)}</TableCell>
-									<TableCell align="right">
+									{/* <TableCell align="right">
 										<Button
 											size="small"
 											variant="contained"
@@ -251,7 +251,7 @@ function ZoneCard({ zone, index }) {
 										>
 											View Detail
 										</Button>
-									</TableCell>
+									</TableCell> */}
 								</TableRow>
 							))}
 						</TableBody>
@@ -293,21 +293,36 @@ export default function AgentDashboard() {
 			<Card variant="outlined" sx={{ p: 2, borderRadius: 0.5, mb: 2 }}>
 				<Stack direction="row" alignItems="center" spacing={2} justifyContent="space-between">
 					<Stack direction="row" spacing={2} alignItems="center">
-						<Avatar src={rowData?.avatar} alt={rowData?.agent_name} sx={{ width: 48, height: 48 }} />
+						<Avatar
+							src={rowData?.avatar}
+							alt={rowData?.agent_name}
+							sx={{ width: 48, height: 48, bgcolor: "#1976d2", fontWeight: 600 }}
+						>
+							{
+								!rowData?.avatar &&
+								rowData?.agent_name
+									?.split(" ")
+									.map(word => word[0]?.toUpperCase())
+									.join("")
+							}
+						</Avatar>
 						<Box>
 							<Typography fontWeight={700}>{rowData?.agent_name}</Typography>
 							<Typography variant="body2" color="text.secondary">
 								{rowData.email}
 							</Typography>
+
 						</Box>
 					</Stack>
-
+					<Stack><Typography variant="body2" color="text.secondary">
+						<Typography component="span" color="text.primary"> {rowData?.phone_number}</Typography>
+					</Typography></Stack>
 					<Box sx={{ textAlign: 'right' }}>
 						<Typography variant="body2" color="text.secondary">
-							Agent ID : <Typography component="span" color="text.primary"> {rowData?.id}</Typography>
+							Agent Id :  <Typography component="span" color="text.primary"> {rowData?.id}</Typography>
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
-							Date Joined : <Typography component="span" color="text.primary"> {formatTimestamp(rowData?.createdAt)}</Typography>
+							Date Added : <Typography component="span" color="text.primary"> {formatTimestamp(rowData?.createdAt)}</Typography>
 						</Typography>
 					</Box>
 
@@ -346,7 +361,7 @@ export default function AgentDashboard() {
 
 			<Card variant="outlined" sx={{ borderRadius: 0.5, mb: 2 }}>
 				<Typography variant="h5" sx={{ px: 1.8, py: 2, mb: 1.5 }}>
-					Assigned Zones & Issues
+					Lead Activity
 				</Typography>
 				<Divider />
 

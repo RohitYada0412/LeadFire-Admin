@@ -52,6 +52,9 @@ export default function AgentTable({
 	const safeRows = Array.isArray(data) ? data : [];
 	const navigate = useNavigate()
 
+console.log('data',data);
+
+
 	return (
 		<Box>
 			<TableContainer
@@ -69,12 +72,10 @@ export default function AgentTable({
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Agent Name</StyledTableCell>
-							<StyledTableCell align="center">Email</StyledTableCell>
-							<StyledTableCell align="center">Zone</StyledTableCell>
-
-							<StyledTableCell align="center">Date Joined</StyledTableCell>
+							<StyledTableCell align="center">Company Email</StyledTableCell>
+							<StyledTableCell align="center">Date Added</StyledTableCell>
 							<StyledTableCell align='center'>Status</StyledTableCell>
-							{isUser && <StyledTableCell align="right">Actions</StyledTableCell>}
+							{isUser && <StyledTableCell align="center"></StyledTableCell>}
 						</TableRow>
 					</TableHead>
 
@@ -96,7 +97,7 @@ export default function AgentTable({
 									<StyledTableCell align="center" sx={{ wordBreak: 'break-all' }}>
 										{r.email}
 									</StyledTableCell>
-									<StyledTableCell align="center">{r.zone?.length > 0 ? r.zone.length : 'N/A'}</StyledTableCell>
+									{/* <StyledTableCell align="center">{r.zone?.length > 0 ? r.zone.length : 'N/A'}</StyledTableCell> */}
 
 									<StyledTableCell align="center">{formatTimestamp(r.createdAt)}</StyledTableCell>
 									<StyledTableCell align='center'>
@@ -117,8 +118,8 @@ export default function AgentTable({
 										</FormControl>
 									</StyledTableCell>
 									{isUser &&
-										<StyledTableCell align="right">
-											<Stack direction='row' justifyContent='end' spacing={2}>
+										<StyledTableCell align="center">
+											<Stack direction='row' justifyContent='center' spacing={2}>
 												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
 													onClick={() => {
 														setOpen(true)

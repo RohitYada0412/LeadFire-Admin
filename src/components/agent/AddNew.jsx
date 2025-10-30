@@ -68,10 +68,6 @@ export default function AddCompanyDialog({
   useEffect(() => {
     if (open && JSON.parse(role).user.uid) {
       getCompanyById(JSON.parse(role).user.uid).then((companyDetail) => {
-
-        console.log('companyDetail?.company_name', companyDetail?.company_name);
-
-
         setInitialData({
           ...initialData,
           company_name: companyDetail?.company_name
@@ -82,7 +78,7 @@ export default function AddCompanyDialog({
   }, [companyId])
 
 
-console.log(initialData)
+  console.log(initialData)
 
 
   return (
@@ -114,7 +110,7 @@ console.log(initialData)
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
           values['company_id'] = JSON.parse(role).user.uid
-          values['agent_name']= values.first_name+values.last_name
+          values['agent_name'] = values.first_name + " " + values.last_name
           try {
             if (companyId) {
               await updateAgent(String(companyId), values);
@@ -189,7 +185,12 @@ console.log(initialData)
             <DialogContent dividers sx={{ border: "none", pt: 2 }} component="form" onSubmit={handleSubmit}>
               <Stack spacing={1.25}>
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent First Name</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>
+                    Agent First Name
+                    <Typography component="span" sx={{ color: "red" }}>
+                      *
+                    </Typography>
+                  </Typography>
                   <TextField
                     placeholder="Enter agent first name"
                     fullWidth
@@ -198,7 +199,9 @@ console.log(initialData)
                     helperText={touched.first_name && errors.first_name}
                   />
                 </Stack><Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent Last Name</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Agent Last Name<Typography component="span" sx={{ color: "red" }}>
+                    *
+                  </Typography></Typography>
                   <TextField
                     placeholder="Enter agent last name"
                     fullWidth
@@ -209,7 +212,10 @@ console.log(initialData)
                 </Stack>
 
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Email Address</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Email Address {!companyId && <Typography disabled={Boolean(companyId)} component="span" sx={{ color: "red" }}>
+                    *
+                  </Typography>}
+                  </Typography>
                   <TextField
                     placeholder="Enter agent email"
                     fullWidth
@@ -221,15 +227,28 @@ console.log(initialData)
                 </Stack>
 
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Phone Number</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Phone Number<Typography component="span" sx={{ color: "red" }}>
+                    *
+                  </Typography></Typography>
                   <TextField
-                    placeholder="Enter phone number"
+                    placeholder="XXX-XXX-XXXX"
                     fullWidth
                     {...getFieldProps("phone_number")}
                     error={touched.phone_number && Boolean(errors.phone_number)}
                     helperText={touched.phone_number && errors.phone_number}
-                  // disabled={Boolean(companyId)}
+                    InputProps={{
+                      sx: {
+                        "&::placeholder": {
+                          fontStyle: "italic",
+                        },
+                        // MUI input placeholder selector
+                        "& .MuiInputBase-input::placeholder": {
+                          fontStyle: "italic",
+                        },
+                      },
+                    }}
                   />
+
                 </Stack>
 
                 <Stack>

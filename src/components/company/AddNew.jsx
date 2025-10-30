@@ -138,7 +138,9 @@ export default function AddCompanyDialog({
 							onSubmit={handleSubmit}
 						>
 							<Stack direction='column'>
-								<Typography variant="body1">Company Name</Typography>
+								<Typography variant="body1">Company Name<Typography component="span" sx={{ color: "red" }}>
+									*
+								</Typography></Typography>
 								<TextField
 									placeholder="Enter Company Name"
 									fullWidth
@@ -151,7 +153,9 @@ export default function AddCompanyDialog({
 							</Stack>
 
 							<Stack direction='column'>
-								<Typography variant="body1">Contact First Name</Typography>
+								<Typography variant="body1">Contact First Name<Typography component="span" sx={{ color: "red" }}>
+									*
+								</Typography></Typography>
 								<TextField
 									placeholder="Enter Contact First Name"
 									fullWidth
@@ -167,7 +171,9 @@ export default function AddCompanyDialog({
 							</Stack>
 
 							<Stack direction='column'>
-								<Typography variant="body1">Contact Last Name</Typography>
+								<Typography variant="body1">Contact Last Name<Typography component="span" sx={{ color: "red" }}>
+									*
+								</Typography></Typography>
 								<TextField
 									placeholder="Enter Contact Last Name"
 									fullWidth
@@ -180,7 +186,9 @@ export default function AddCompanyDialog({
 							</Stack>
 
 							<Stack direction='column'>
-								<Typography variant="body1">Company Phone Number</Typography>
+								<Typography variant="body1">Company Phone Number<Typography component="span" sx={{ color: "red" }}>
+									*
+								</Typography></Typography>
 								<TextField
 									placeholder="Enter Company Phone Number"
 									fullWidth
@@ -193,7 +201,9 @@ export default function AddCompanyDialog({
 							</Stack>
 
 							<Stack direction='column'>
-								<Typography variant="body1">Company Admin Email</Typography>
+								<Typography variant="body1">Company Admin Email<Typography component="span" sx={{ color: "red" }}>
+									*
+								</Typography></Typography>
 								<TextField
 									label=""
 									placeholder="Email Company Admin Email"

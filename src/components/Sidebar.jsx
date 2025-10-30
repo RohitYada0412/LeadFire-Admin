@@ -1,5 +1,11 @@
 // SideBar.jsx
 import React from "react"
+import { useState } from "react";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+
+
+
 import {
   Box,
   Drawer,
@@ -26,14 +32,14 @@ function DrawerContent({ setOpen, onLogout, isUser }) {
 
   const navItems = [
     { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
-    { text: "Company", to: "/company", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
+    { text: "Manage Companies", to: "/company", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
     // { text: "Agents", to: "/agents", icon: <Iconify icon="raphael:user" width={20} height={20} /> },
     // { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
     { text: "Logout", action: "logout", icon: <Iconify icon="humbleicons:logout" width={20} height={20} /> },
   ]
   const companyItem = [
-    // { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
-    { text: "Agents", to: "/agents", icon: <Iconify icon="mdi:account-tie-outline" width={20} height={20} /> },
+    { text: "Dashboard", to: "/dashboard", icon: <Iconify icon="mage:dashboard-fill" width={20} height={20} /> },
+    { text: "Manage My Agents", to: "/agents", icon: <Iconify icon="mdi:account-tie-outline" width={20} height={20} /> },
     { text: "Zones", to: "/zones", icon: <Iconify icon="hugeicons:location-10" width={20} height={20} /> },
     // { text: "Issues", to: "/issues", icon: <Iconify icon="ph:warning" width={20} height={20} /> },
     { text: "Logout", action: "logout", icon: <Iconify icon="humbleicons:logout" width={20} height={20} /> },
@@ -85,22 +91,108 @@ function DrawerContent({ setOpen, onLogout, isUser }) {
           }
 
           // Render Logout as a button with onClick
+          // if (action === "logout") {
+          //   return (
+          //     <ListItemButton
+          //       key="logout"
+          //       onClick={() => {
+          //         setOpen(false)
+          //         onLogout?.()
+          //       }}
+          //       sx={commonSx}
+          //       aria-label="Logout"
+          //     >
+          //       <ListItemIcon>{icon}</ListItemIcon>
+          //       <ListItemText primary={text} primaryTypographyProps={{ fontWeight: 700, fontSize: 14 }} />
+          //     </ListItemButton>
+          //   )
+          // }
+
+
+          const [confirmLogout, setConfirmLogout] = useState(false);
+
           if (action === "logout") {
             return (
-              <ListItemButton
-                key="logout"
-                onClick={() => {
-                  setOpen(false)
-                  onLogout?.()
-                }}
-                sx={commonSx}
-                aria-label="Logout"
-              >
-                <ListItemIcon>{icon}</ListItemIcon>
-                <ListItemText primary={text} primaryTypographyProps={{ fontWeight: 700, fontSize: 14 }} />
-              </ListItemButton>
-            )
+              <>
+                <ListItemButton
+                  key="logout"
+                  onClick={() => {
+                    setOpen(false);       // close menu
+                    setConfirmLogout(true); // show confirmation dialog
+                  }}
+                  sx={commonSx}
+                  aria-label="Logout"
+                >
+                  <ListItemIcon>{icon}</ListItemIcon>
+                  <ListItemText primary={text} primaryTypographyProps={{ fontWeight: 700, fontSize: 14 }} />
+                </ListItemButton>
+
+                {/* Logout confirmation dialog */}
+                <Dialog
+                  open={confirmLogout}
+                  onClose={() => setConfirmLogout(false)}
+                  PaperProps={{
+                    sx: { borderRadius: 1, p: 2, minWidth: 340 }
+                  }}
+                >
+                  <DialogTitle sx={{ textAlign: "center", fontWeight: 600, pb: 1 }}>
+                    Logout Confirmation
+                  </DialogTitle>
+
+                  <DialogContent sx={{ textAlign: "center", pb: 5 }}>
+                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                      Are you sure you want to logout?
+                      You will need to sign in again to access your account.
+                    </Typography>
+                  </DialogContent>
+
+                  <DialogActions
+                    sx={{
+                      justifyContent: "center", // ✅ centers buttons
+                      gap: 2,
+                      pb: 2
+                    }}
+                  >
+                    <Button
+                      onClick={() => setConfirmLogout(false)}
+                      variant="outlined"
+                      color="inherit"
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: .8,
+                        px: 5
+                      }}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        setConfirmLogout(false);
+                        onLogout?.();
+                      }}
+                      variant="contained"
+                      color="error"
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: .8,
+                        px: 5
+                      }}
+                    >
+                      Logout
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+
+
+              </>
+            );
           }
+
+
+
+
+
 
           return (
             <ListItemButton

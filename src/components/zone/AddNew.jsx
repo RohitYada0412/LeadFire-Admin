@@ -217,7 +217,9 @@ export default function ZoneDialog({
                 {/* Zone Name */}
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>
-                    Zone Name
+                    Zone Name<Typography component="span" sx={{ color: "red" }}>
+                      *
+                    </Typography>
                   </Typography>
                   <TextField
                     placeholder="Zone 01"
@@ -229,7 +231,9 @@ export default function ZoneDialog({
                   />
                 </Stack>
                 <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Assign Agent</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5 }}>Assign Agent
+                    
+                  </Typography>
                   <Autocomplete
                     multiple
                     disableCloseOnSelect
@@ -257,7 +261,9 @@ export default function ZoneDialog({
                 {/* Location (Places Autocomplete) */}
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>
-                    Location
+                    Location<Typography component="span" sx={{ color: "red" }}>
+                      *
+                    </Typography>
                   </Typography>
 
                   {!isLoaded ? (
@@ -293,7 +299,9 @@ export default function ZoneDialog({
                 {/* Radius + Unit */}
                 <Stack>
                   <Typography variant="body2" sx={{ mb: 0.5 }}>
-                    Radius
+                    Radius<Typography component="span" sx={{ color: "red" }}>
+                      *
+                    </Typography>
                   </Typography>
                   <Grid2 container spacing={1}>
                     <Grid2 xs={10}>

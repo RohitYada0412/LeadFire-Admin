@@ -64,12 +64,12 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Zone Name</StyledTableCell>
-							<StyledTableCell>Company Name</StyledTableCell>
-							<StyledTableCell align="center">Location</StyledTableCell>
+							{/* <StyledTableCell>Company Name</StyledTableCell> */}
+							<StyledTableCell align="center">Zone Center Address</StyledTableCell>
 							<StyledTableCell align="center">Radius</StyledTableCell>
-							<StyledTableCell>Issues</StyledTableCell>
+							{/* <StyledTableCell>Issues</StyledTableCell> */}
 							<StyledTableCell>Status</StyledTableCell>
-							{isUser && <StyledTableCell align="right">Actions</StyledTableCell>}
+							{isUser && <StyledTableCell align="right"></StyledTableCell>}
 						</TableRow>
 					</TableHead>
 
@@ -83,12 +83,12 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 										{r.zone_name || 'N/A'}
 									</StyledTableCell>
 
-									<StyledTableCell sx={{ wordBreak: 'break-all' }}>
+									{/* <StyledTableCell sx={{ wordBreak: 'break-all' }}>
 										{r.company_name}
-									</StyledTableCell>
+									</StyledTableCell> */}
 									<StyledTableCell align="center">{r.address}</StyledTableCell>
 									<StyledTableCell align="center">{r.radius_value + r.radius_unit}</StyledTableCell>
-									<StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell>
+									{/* <StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell> */}
 									<StyledTableCell>
 										<FormControl size="small" sx={{ m: 1 }}>
 											<Select
@@ -113,7 +113,7 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 													setCompanyId(r?.id)
 												}}
 											>
-												View Detail
+												Edit Zone
 											</Button>
 										</StyledTableCell>}
 								</StyledTableRow>
