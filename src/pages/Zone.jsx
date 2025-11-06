@@ -63,9 +63,12 @@ const Zone = () => {
 
 		if (filterData.status !== "" && filterData.status != null)
 			p.status = Number(filterData.status);
+
+		if (filterData.assigned_status !== "" && filterData.assigned_status != null)
+			p.assigned_status = Number(filterData.assigned_status);
 		if (debouncedSearch) p.search = debouncedSearch;
 		return p;
-	}, [filterData.status, debouncedSearch]);
+	}, [filterData.assigned_status, debouncedSearch]);
 
 
 	useEffect(() => {
@@ -158,6 +161,9 @@ const Zone = () => {
 		};
 	}, [agentParams]);
 
+	console.log('rows :- ', rows);
+
+
 	return (
 		<React.Fragment>
 			<Grid2 container spacing={2} className='mb-2' alignItems="center">
@@ -192,6 +198,26 @@ const Zone = () => {
 					alignItems="center"
 					spacing={1}
 				>
+
+					<Grid2>
+						<FormControl size="small">
+							<Select
+								value={filterData.assigned_status || 0}
+								onChange={(e) => {
+									setFilterData((prev) => ({
+										...prev,
+										assigned_status: e.target.value,
+									}));
+								}}
+							>
+								<MenuItem value={0} disabled>
+									All
+								</MenuItem>
+								<MenuItem value={1}>Assigned</MenuItem>
+								<MenuItem value={2}>Not Assigned</MenuItem>
+							</Select>
+						</FormControl>
+					</Grid2>
 					<Grid2>
 						<FormControl size="small">
 							<Select
@@ -206,23 +232,23 @@ const Zone = () => {
 								<MenuItem value={0} disabled>
 									All
 								</MenuItem>
-								<MenuItem value={1}>Assigned</MenuItem>
-								<MenuItem value={2}>Not Assigned</MenuItem>
+								<MenuItem value={1}>Active</MenuItem>
+								<MenuItem value={2}>Inactive</MenuItem>
 							</Select>
 						</FormControl>
 					</Grid2>
-
-					{isUser && <Grid2>
-						<Button
-							variant="contained"
-							color="error"
-							onClick={handleClickOpen}
-							sx={{ borderRadius: 0.8 }}
-							size="small"
-						>
-							+ Add New Zone
-						</Button>
-					</Grid2>}
+					{isUser &&
+						<Grid2>
+							<Button
+								variant="contained"
+								color="error"
+								onClick={handleClickOpen}
+								sx={{ borderRadius: 0.8 }}
+								size="small"
+							>
+								+ Add New Zone
+							</Button>
+						</Grid2>}
 				</Grid2>
 			</Grid2>
 

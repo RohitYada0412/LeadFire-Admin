@@ -31,6 +31,8 @@ import {
 } from "firebase/storage";
 
 import { updateCompanyAgentCount } from "./companies";
+import { getNextSno } from "../utils/firebase-service";
+import { toast } from "react-toastify";
 
 const app = getApp();
 const db = getFirestore(app);
@@ -64,7 +66,10 @@ export async function createAgent(data) {
   const first_name = String(data?.first_name ?? "").trim();
   const last_name = String(data?.last_name ?? "").trim();
   const email = String(data?.email ?? "").trim().toLowerCase();
-  const uid = String(data?.id ?? data?.uid ?? "").trim(); // <- UID becomes doc ID
+  const uid = String(data?.id ?? data?.uid ?? "").trim(); // <- UID 
+  // becomes doc ID
+
+  const { sno, unique_id } = await getNextSno(db, 'agents', 'FA');
 
   if (!uid) throw new Error("UID is required.");
   if (!first_name) throw new Error("first name is required.");
@@ -84,8 +89,10 @@ export async function createAgent(data) {
   const payload = {
     id: uid,
     first_name,
+    unique_id,
+    sno,
     last_name,
-    agent_name:data.agent_name,
+    agent_name: data.agent_name,
     email,
     agent_name_lc: data.agent_name.toLowerCase(),
     email_lc: email,
@@ -218,68 +225,19 @@ export async function deleteAgent(agentId) {
 
   await deleteDoc(refDoc);
 
+  const url = "https://leadfirepro.net/api/delete-user";
+  const emailRes = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: agentId }),
+  });
+  toast.success("Agent delete successfully!");
+
   if (companyId) {
     await updateCompanyAgentCount(companyId);
   }
 }
 
-
-// export function listAgents(params = {}, onData, onError, cursor = null) {
-//   const colRef = collection(getFirestore() || db, "agents");
-//   const constraints = [];
-
-//   if (params.company_id) {
-//     constraints.push(where("company_Id", "==", params.company_id));
-//   }
-//   if (typeof params.status === "number") {
-//     constraints.push(where("status", "==", params.status));
-//   }
-//   if (Array.isArray(params.zone) && params.zone.length > 0) {
-//     constraints.push(where("zone", "in", [params.zone.slice(0, 10)]));
-//   }
-
-//   let didApplySearch = false;
-
-//   if (params.search && params.search.trim()) {
-//     const s = params.search.trim().toLowerCase(); // normalize query
-
-//     constraints.push(where("agent_name_lc", ">=", s));
-//     constraints.push(where("agent_name_lc", "<=", s + "\uf8ff"));
-//     constraints.push(orderBy("agent_name_lc", "asc"));
-
-//     constraints.push(where("email", ">=", s));
-//     constraints.push(where("email", "<=", s + "\uf8ff"));
-//     constraints.push(orderBy("email", "asc"));
-//     didApplySearch = true;
-//   }
-
-//   if (!didApplySearch) constraints.push(orderBy("createdAt", "desc"));
-//   if (params.limitBy) constraints.push(qLimit(params.limitBy));
-//   if (cursor != null) constraints.push(startAfter(cursor));
-
-//   const q = query(colRef, ...constraints);
-
-//   return onSnapshot(
-//     q,
-//     (snap) => {
-//       const rows = snap.docs.map((d) => {
-//         const data = d.data();
-//         return {
-//           id: d.id,
-//           ...data,
-//           agentIdFormatted: formatAgentId(d.id), // ✅ add formatted Agent ID
-//         };
-//       });
-//       const nextCursor = snap.docs.length
-//         ? snap.docs[snap.docs.length - 1]
-//         : null;
-//       onData(rows, nextCursor);
-//     },
-//     (err) => {
-//       if (onError) console.error("Agents listener error:", err);
-//     }
-//   );
-// }
 
 
 export function listAgents(params = {}, onData, onError, cursor = null) {

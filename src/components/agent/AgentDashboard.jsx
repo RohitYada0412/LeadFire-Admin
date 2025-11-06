@@ -284,7 +284,7 @@ export default function AgentDashboard() {
 		}
 	}, [id])
 
-	// console.log('rowData :- ', rowData?.email);
+	console.log('rowData :- ', rowData);
 
 
 
@@ -311,15 +311,18 @@ export default function AgentDashboard() {
 							<Typography variant="body2" color="text.secondary">
 								{rowData.email}
 							</Typography>
+							<Typography component="caption" color="text.secondary"> {rowData?.phone_number}</Typography>
+
 
 						</Box>
 					</Stack>
-					<Stack><Typography variant="body2" color="text.secondary">
-						<Typography component="span" color="text.primary"> {rowData?.phone_number}</Typography>
-					</Typography></Stack>
-					<Box sx={{ textAlign: 'right' }}>
+					{/* <Stack>
 						<Typography variant="body2" color="text.secondary">
-							Agent Id :  <Typography component="span" color="text.primary"> {rowData?.id}</Typography>
+						</Typography>
+					</Stack> */}
+					<Box sx={{ textAlign: 'left' }}>
+						<Typography variant="body2" color="text.secondary">
+							Agent ID :  <Typography component="span" color="text.primary"> {rowData?.unique_id}</Typography>
 						</Typography>
 						<Typography variant="body2" color="text.secondary">
 							Date Added : <Typography component="span" color="text.primary"> {formatTimestamp(rowData?.createdAt)}</Typography>

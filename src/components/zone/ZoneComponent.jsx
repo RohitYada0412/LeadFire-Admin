@@ -61,11 +61,11 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 				<Table stickyHeader aria-label="companies table">
 					<TableHead>
 						<TableRow>
+							<StyledTableCell>Id</StyledTableCell>
 							<StyledTableCell>Zone Name</StyledTableCell>
-							{/* <StyledTableCell>Company Name</StyledTableCell> */}
 							<StyledTableCell align="center">Zone Center Address</StyledTableCell>
 							<StyledTableCell align="center">Radius</StyledTableCell>
-							{/* <StyledTableCell>Issues</StyledTableCell> */}
+							<StyledTableCell>Assigned Agent</StyledTableCell>
 							<StyledTableCell>Status</StyledTableCell>
 							{isUser && <StyledTableCell align="right"></StyledTableCell>}
 						</TableRow>
@@ -78,6 +78,9 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 							return (
 								<StyledTableRow key={r.id}>
 									<StyledTableCell>
+										{r.unique_id || 'N/A'}
+									</StyledTableCell>
+									<StyledTableCell>
 										{r.zone_name || 'N/A'}
 									</StyledTableCell>
 
@@ -86,7 +89,7 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 									</StyledTableCell> */}
 									<StyledTableCell align="center">{r.address}</StyledTableCell>
 									<StyledTableCell align="center">{r.radius_value + r.radius_unit}</StyledTableCell>
-									{/* <StyledTableCell>{formatTimestamp(r.createdAt)}</StyledTableCell> */}
+									<StyledTableCell>{r.agent_id?.length > 0 ? 'Assigned' : 'Not Assigned'}</StyledTableCell>
 									<StyledTableCell>
 										<FormControl size="small" sx={{ m: 1 }}>
 											<Select
@@ -98,8 +101,8 @@ export default function ZoneTable({ data, setStatus, setCompanyId, setOpen, isUs
 													setStatus(r.id, next);
 												}}
 											>
-												<MenuItem value={1}>Assigned</MenuItem>
-												<MenuItem value={2}>Not Assigned</MenuItem>
+												<MenuItem value={1}>Active</MenuItem>
+												<MenuItem value={2}>Inactive</MenuItem>
 											</Select>
 										</FormControl>
 									</StyledTableCell>

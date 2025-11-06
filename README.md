@@ -6,3 +6,5 @@ firebase projects:list #for list of projects
 firebase deploy --project leadfire-efdc2  #To select the proejct
 Basic deploy (all configured services)
 firebase deploy
+firebase deploy --project leadfire-efdc2 --only functions,hosting
+firebase deploy --project leadfire-efdc2 --only functions

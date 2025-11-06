@@ -236,7 +236,7 @@ export default function Login() {
 										// }
 									} catch (err) {
 										// setSubmitError(err?.message || "Failed to sign in");
-										toast.error(err?.message)
+										toast.error('Your login credentials are not recognized. Please check your email and password, then try again.')
 									} finally {
 										setSubmitting(false);
 									}
@@ -292,18 +292,27 @@ export default function Login() {
 													}}
 												/>
 											</Box>
-											<FormControlLabel
-												control={
-													<Checkbox
-														name="remember"
-														checked={values.remember}
-														onChange={handleChange}
-														size="small"
-													/>
-												}
-												label="Remember me"
-												sx={{ color: 'text.secondary' }}
-											/>
+
+											<Stack direction='row' justifyContent='space-between' alignItems='center'>
+												<FormControlLabel
+													control={
+														<Checkbox
+															name="remember"
+															checked={values.remember}
+															onChange={handleChange}
+															size="small"
+														/>
+													}
+													label="Remember me"
+													sx={{ color: 'text.secondary' }}
+												/>
+
+												<Box sx={{ cursor: 'pointer' }} onClick={() => navigate('/forgot-password')}>
+													<Typography variant='body1' color='text.secondary'>Forgot Password?</Typography>
+												</Box>
+
+											</Stack>
+
 
 											<Button
 												type="submit"

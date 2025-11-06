@@ -17,20 +17,21 @@ import SendMail from "./pages/SendMail";
 import ResetPassword from "./pages/ResetPassword";
 import Issues from "./pages/issue";
 import ForgotPassword from "./pages/forgotpassword";
+import Pa from "./pages/PrivacyPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermAndCondition from "./pages/TermCondition";
+import ContactUs from "./pages/ContactUs";
 
 export default function App() {
   const basename = import.meta.env.VITE_ROUTER_BASENAME;
   return (
-    <BrowserRouter basename={basename}>
-
+    <BrowserRouter basename="/">
       <Routes>
         <Route path="/" element={<Outlet />}>
           <Route element={<PublicLayout />}>
-
             <Route
               path="/"
               element={
-
                 <PublicRoute>
                   <Login />
                 </PublicRoute>
@@ -87,7 +88,11 @@ export default function App() {
             <Route path="agents/:id" element={<AgentDashboard />} />
             <Route path="zones" element={<Zone />} />
             <Route path="issues" element={<Issues />} />
+
           </Route>
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="term-and-condition" element={<TermAndCondition />} />
+          <Route path="/contact-us" element={<ContactUs />} />
         </Route>
       </Routes>
     </BrowserRouter>

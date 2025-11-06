@@ -9,10 +9,14 @@ import { toast } from "react-toastify";
 import { auth } from "../firebase";
 import { imageURL } from "../utils/images";
 
+
+
 const VERIFY_WINDOW_SECONDS = 600;
 const POLL_MS = 5000;
 const TICK_MS = 250;
 const RESEND_COOLDOWN = 30;
+
+
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -101,21 +105,44 @@ export default function VerifyEmail() {
     }, POLL_MS);
   }
 
+  // async function handleSend() {
+  //   try {
+
+  //     const user = auth.currentUser ? auth.currentUser : JSON.parse(loacl);
+  //     if (!user) {
+  //       toast.error("No signed-in user.");
+  //       return;
+  //     }
+
+  //     await sendEmailVerification(user,
+  //       //   {
+  //       //   url: `${window.location.origin}/login`,
+  //       //   handleCodeInApp: false,
+  //       // }
+  //     );
+  //     toast.info(`Verification link sent to ${user.email}`);
+
+  //     endAtRef.current = Date.now() + VERIFY_WINDOW_SECONDS * 1000;
+  //     setSecondsLeft(calcSecondsLeft());
+  //   } catch (e) {
+  //     console.error(e);
+  //     toast.error(e?.message || "Failed to send verification email");
+  //   }
+  // }
   async function handleSend() {
     try {
+      const user = auth.currentUser;
 
-      const user = auth.currentUser ? auth.currentUser : JSON.parse(loacl);
       if (!user) {
-        toast.error("No signed-in user.");
+        toast.error("No signed-in user. Please log in again.");
         return;
       }
 
-      await sendEmailVerification(user,
-        //   {
-        //   url: `${window.location.origin}/login`,
-        //   handleCodeInApp: false,
-        // }
-      );
+      await sendEmailVerification(user, {
+        url: `${window.location.origin}/login`, // redirect after email verification
+        handleCodeInApp: false,
+      });
+
       toast.info(`Verification link sent to ${user.email}`);
 
       endAtRef.current = Date.now() + VERIFY_WINDOW_SECONDS * 1000;
@@ -125,6 +152,8 @@ export default function VerifyEmail() {
       toast.error(e?.message || "Failed to send verification email");
     }
   }
+
+
 
   return (
     <Box
@@ -245,3 +274,5 @@ export default function VerifyEmail() {
     </Box>
   );
 }
+
+

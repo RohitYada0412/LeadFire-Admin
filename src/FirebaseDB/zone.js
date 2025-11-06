@@ -15,6 +15,7 @@ import {
   updateDoc,
   where
 } from "firebase/firestore";
+import { getNextSno } from "../utils/firebase-service";
 
 const db = getFirestore(getApp());
 
@@ -76,9 +77,14 @@ export function normalizeZone(input = {}) {
 
 export async function createZone(input) {
   const payload = normalizeZone(input);
+  const { sno, unique_id } = await getNextSno(db, 'zones', 'Z');
+
 
   const ref = await addDoc(collection(db, "zones"), {
     ...payload,
+    unique_id,
+    sno,
+    assigned_status: payload.agent_id ? 1 : 2,
     createdAt: serverTimestamp(),
   });
   return ref.id;
@@ -225,6 +231,7 @@ export function listZones(params, onData, onError, cursor = null) {
   // filters
   if (params?.company_id) constraints.push(where("company_Id", "==", params.company_id));
   if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
+  if (typeof params?.assigned_status === "number") constraints.push(where("assigned_status", "==", params.assigned_status));
 
   // search / sort
   const hasSearch = !!(params?.search && params.search.trim());

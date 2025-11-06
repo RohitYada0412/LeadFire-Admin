@@ -3,14 +3,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import Iconify from "../components/common/iconify/Iconify";
 import AddCompanyDialog from "../components/company/AddNew";
 import ResponsiveCompanyTable from "../components/company/CompanyComponent";
-import { getCompanyById, listenCompanies1, updateCompany } from "../FirebaseDB/companies";
+import { deleteCompany, getCompanyById, listenCompanies1, updateCompany } from "../FirebaseDB/companies";
 import { generateTempPassword } from "../utils/password";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 
 const Company = () => {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [rows, setRows] = useState([])
 	const [debouncedSearch, setDebouncedSearch] = useState("");
+	const [openConfirm, setOpenConfirm] = useState(false);
+
 
 	const [filterData, setFilterData] = useState({
 		status: 1,
@@ -23,9 +26,9 @@ const Company = () => {
 		temp_password: generateTempPassword({ length: 10 }),
 		user_name: 'company',
 		user_type: 2,
-		first_name:'',
-		last_name:'',
-		phone_number:''
+		first_name: '',
+		last_name: '',
+		phone_number: ''
 	})
 	const [companyId, setCompanyId] = useState('')
 	const handleClickOpen = () => setOpen(true);
@@ -44,18 +47,16 @@ const Company = () => {
 
 		const p = { limitBy: PAGE_SIZE };
 
+
 		if (companyIdFromAuth) p.company_id = companyIdFromAuth;
 
 		if (filterData.status !== "" && filterData.status != null)
 			p.status = Number(filterData.status);
 
-		// if (Array.isArray(filterData.zone) && filterData.zone.length > 0) {
-		// 	p.zone = filterData.zone.map(String);
-		// }
 		if (debouncedSearch) p.search = debouncedSearch;
 
 		return p;
-	}, [filterData.status, filterData.zone, debouncedSearch]);
+	}, [filterData.status, filterData.search, debouncedSearch]);
 
 
 
@@ -66,6 +67,7 @@ const Company = () => {
 		);
 		return () => clearTimeout(id);
 	}, [filterData.search]);
+
 
 	useEffect(() => {
 		const unsub = listenCompanies1(agentParams, (docs) => {
@@ -110,9 +112,9 @@ const Company = () => {
 		}
 	}, [companyId, open])
 
-
-	console.log('rows :- ', rows);
-
+	const handleSelectConfirm = (id) => {
+		deleteCompany(companyId)
+	}
 
 	return (
 		<React.Fragment>
@@ -188,12 +190,13 @@ const Company = () => {
 
 
 
-		<ResponsiveCompanyTable
+			<ResponsiveCompanyTable
 				data={rows}
 				loading={loading}
 				setStatus={handleSelect}
 				setCompanyId={setCompanyId}
 				setOpen={setOpen}
+				setOpenConfirm={setOpenConfirm}
 			/>
 
 			{open &&
@@ -204,9 +207,18 @@ const Company = () => {
 					companyId={companyId}
 					setInitialData={setInitialData}
 					setCompanyId={setCompanyId}
+				// setOpenConfirm={setOpenConfirm}
 
 				/>
 			}
+
+			<ConfirmDialog
+				open={openConfirm}
+				title="Delete Confirmation"
+				message="Are you sure you want to permanently delete company?"
+				onClose={setOpenConfirm}
+				onConfirm={handleSelectConfirm}
+			/>
 
 
 		</React.Fragment>

@@ -1,11 +1,7 @@
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import {
 	Box,
 	Button,
-	Chip,
 	FormControl,
-	InputLabel,
 	MenuItem,
 	Paper,
 	Select,
@@ -48,7 +44,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 	'&:last-child td, &:last-child th': { border: 0 },
 }));
 
-export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, setOpen  /* loading */ }) {
+export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, setOpen, setOpenConfirm  /* loading */ }) {
 
 	return (
 		<Box>
@@ -67,7 +63,7 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Company ID</StyledTableCell>
-							
+
 							<StyledTableCell>Company</StyledTableCell>
 							<StyledTableCell>Email</StyledTableCell>
 							{/* <StyledTableCell align="center">Zone</StyledTableCell> */}
@@ -82,11 +78,10 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 						{data?.length > 0 ? data.map((r) => {
 							const selectId = `status-select-${r.id}`;
 							const labelId = `status-label-${r.id}`;
-							console.log(r);
-							
+
 							return (
 								<StyledTableRow key={r.id}>
-									<StyledTableCell>{r.companyIdFormatted}</StyledTableCell>
+									<StyledTableCell>{r.unique_id}</StyledTableCell>
 									<StyledTableCell>
 										<Typography>{r.company_name}</Typography>
 									</StyledTableCell>
@@ -114,14 +109,25 @@ export default function ResponsiveCompanyTable({ data, setStatus, setCompanyId, 
 										</FormControl>
 									</StyledTableCell>
 									<StyledTableCell align="right">
-										<Button size="small" variant='outlined' color="error" sx={{ borderRadius: 0.5 }}
-											onClick={() => {
-												setOpen(true)
-												setCompanyId(r?.id)
-											}}
-										>
-											Edit
-										</Button>
+										<Stack direction='row' justifyContent='right' alignItems='center' spacing={1}>
+											<Button size="small" variant='outlined' color="error" sx={{ borderRadius: 0.5 }}
+												onClick={() => {
+													setOpenConfirm(true)
+													setCompanyId(r?.id)
+												}}
+											>
+												Delete
+											</Button>
+											<Button size="small" variant='outlined' color="error" sx={{ borderRadius: 0.5 }}
+												onClick={() => {
+													setOpen(true)
+													setCompanyId(r?.id)
+												}}
+											>
+												Edit
+											</Button>
+
+										</Stack>
 									</StyledTableCell>
 								</StyledTableRow>
 							)

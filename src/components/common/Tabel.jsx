@@ -125,9 +125,9 @@ const TabelComponent = ({ data, setEditId, setOpen, title }) => {
 										<StyledTableCell align="right">
 											<Stack direction="row" spacing={1} justifyContent="flex-end">
 												<Label
-												color='primary'
+													color='primary'
 													// variant=
-													sx={{ px: 2, cursor: 'pointer',borderRadius:50 }}
+													sx={{ px: 2, cursor: 'pointer', borderRadius: 50 }}
 													onClick={() => { setEditId(id); setOpen(true) }}
 												>
 													View Detail

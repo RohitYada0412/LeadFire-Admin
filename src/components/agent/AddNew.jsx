@@ -14,6 +14,7 @@ import { createAgent, updateAgent } from "../../FirebaseDB/agent";
 import { deleteOwnAccount, signUpWithRole } from "../../FirebaseDB/resolveUserContext";
 import { useEffect } from "react";
 import { getCompanyById } from "../../FirebaseDB/companies";
+import { baseurl } from "../../utils/authCall";
 
 const phoneYup = Yup.string()
   .trim()
@@ -78,9 +79,6 @@ export default function AddCompanyDialog({
   }, [companyId])
 
 
-  console.log(initialData)
-
-
   return (
     <Dialog open={open} onClose={handleClosePop} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 2, p: 1 } }}>
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 0.5 }}>
@@ -127,13 +125,13 @@ export default function AddCompanyDialog({
                 if (res !== null) {
                   const emailPayload = {
                     to: values.email,
-                    subject: "Verification Mail",
+                    // subject: "Verification Mail",
                     code: values?.temp_password,
-                    expiryMinutes: 15,
+                    // expiryMinutes: 15,
                   };
 
-                  const url = "https://mmfinfotech.co/leadfire-backend/api/send-email-agent";
-                  const emailRes = await fetch(url, {
+                  const url = "send-email-agent";
+                  const emailRes = await fetch(baseurl + url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(emailPayload),

@@ -6,17 +6,17 @@ import {
 } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 
+import AddCompanyDialog from "../components/agent/AddNew";
 import AgentTable from "../components/agent/AgentComponent";
 import Iconify from "../components/common/iconify/Iconify";
-import AddCompanyDialog from "../components/agent/AddNew";
 
 // Firebase helpers
-import { listAgents, updateAgent } from "../FirebaseDB/agent";
-import { listenCompanies } from "../FirebaseDB/companies";
+import { deleteAgent, listAgents, updateAgent } from "../FirebaseDB/agent";
+import { listenCompanies1 } from "../FirebaseDB/companies";
 import { listZones } from "../FirebaseDB/zone";
 
 import { useSelector } from "react-redux";
-import { generatePassword, generateTempPassword } from "../utils/password";
+import { generatePassword } from "../utils/password";
 
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import ConfirmDialog from "../components/common/ConfirmDialog";
@@ -210,7 +210,7 @@ const Agent = () => {
 
 	// companies & zones listeners
 	useEffect(() => {
-		const unsubCompanies = listenCompanies({ limitBy: 50 }, setCompanies);
+		const unsubCompanies = listenCompanies1({ limitBy: 50 }, setCompanies);
 		const unsubZones = listZones({ limitBy: 50 }, setZoneData);
 		return () => {
 			if (typeof unsubCompanies === "function") unsubCompanies();
@@ -228,23 +228,45 @@ const Agent = () => {
 	};
 
 	const handleSelectConfirm = async () => {
-		const prevRow = rows.find((r) => r.id === status?.id);
-		const prevStatus = prevRow?.status;
+		const isStatusChange = status?.nextStatus != null; // not null/undefined
 
-		setRows((prev) =>
-			prev.map((r) => (r.id === status?.id ? { ...r, status: status?.nextStatus } : r))
-		);
+		if (isStatusChange) {
+			// ----- STATUS CHANGE -----
+			const prevRow = rows.find((r) => r.id === status.id);
+			const prevStatus = prevRow?.status;
 
-		try {
-			await updateAgent(String(status?.id), { status: Number(status?.nextStatus) });
-		} catch (err) {
-			console.error("Failed to update agent:", err);
-			// rollback
+			// optimistic UI update
 			setRows((prev) =>
-				prev.map((r) => (r.id === status?.id ? { ...r, status: prevStatus } : r))
+				prev.map((r) =>
+					r.id === status.id ? { ...r, status: status.nextStatus } : r
+				)
 			);
+
+			try {
+				await updateAgent(String(status.id), { status: Number(status.nextStatus) });
+			} catch (err) {
+				console.error("Failed to update agent:", err);
+				// rollback on error
+				setRows((prev) =>
+					prev.map((r) =>
+						r.id === status.id ? { ...r, status: prevStatus } : r
+					)
+				);
+			}
+		} else {
+			// ----- DELETE -----
+			try {
+				await deleteAgent(String(agentId));
+				setRows((prev) => prev.filter((r) => r.id !== agentId));
+			} catch (err) {
+				console.error("Failed to delete agent:", err);
+			}
 		}
+
+		setAgentId(null);
+		setStatus({});
 	};
+
 
 	// Prefill dialog when editing
 	useEffect(() => {
@@ -289,9 +311,6 @@ const Agent = () => {
 			});
 		}
 	}, [agentId, open]);
-
-
-
 
 	return (
 		<React.Fragment>
@@ -405,6 +424,7 @@ const Agent = () => {
 				hasMore={hasMore}
 				onPrev={goPrev}
 				onNext={goNext}
+				setOpenConfirm={setOpenConfirm}
 			/>
 
 			{open && (
@@ -422,11 +442,18 @@ const Agent = () => {
 
 			<ConfirmDialog
 				open={openConfirm}
-				title="Status Confirmation"
+				title={
+					status?.nextStatus != null
+						? 'Status Confirmation'
+						: 'Delete Confirmation'
+				}
 				message="Are you sure you want to change the status of this agent?"
 				onClose={setOpenConfirm}
 				onConfirm={handleSelectConfirm}
 			/>
+
+
+
 		</React.Fragment>
 	);
 };

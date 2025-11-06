@@ -1,4 +1,5 @@
-// src/FirebaseDB/companies.js
+import { toast } from "react-toastify";
+
 import {
   collection,
   doc,
@@ -14,8 +15,12 @@ import {
   setDoc,
   startAfter,
   updateDoc,
-  where
+  where,
+  or,
+  and,
+  deleteDoc
 } from "firebase/firestore";
+import { getNextSno } from "../utils/firebase-service";
 
 const db = getFirestore();
 
@@ -60,10 +65,15 @@ export async function updateCompanyAgentCount(companyId) {
 }
 
 
+
+
 /** Create company with provided UID as doc id */
 export async function createCompany(data) {
   const company_name = String(data?.company_name || "").trim();
   const email = String(data?.email || "").trim().toLowerCase();
+
+  const { sno, unique_id } = await getNextSno(db, 'companies', 'LLP');
+
   const uid = String(data?.uid ?? data?.id ?? "").trim();
 
   if (!uid) throw new Error("Missing UID: pass data.uid (or data.id) to use as the company doc id.");
@@ -71,10 +81,8 @@ export async function createCompany(data) {
   if (!email) throw new Error("Company email is required.");
 
   // 1) Email uniqueness (companies)
-  const dup = await getDocs(
-    query(collection(db, "companies"), where("email_lc", "==", email), qLimit(1))
-  );
-  if (!dup.empty) throw new Error("A company with this email already exists.");
+
+  // if (!dup.empty) throw new Error("A company with this email already exists.");
 
   // 2) UID uniqueness (doc id)
   const companyRef = doc(db, "companies", uid);
@@ -85,11 +93,13 @@ export async function createCompany(data) {
   await setDoc(
     companyRef,
     {
-      company_name,     
+      unique_id,
+      unique_id_lc: unique_id.toLowerCase(),
+      sno,
+      company_name,
       email,
       company_name_lc: company_name.toLowerCase(),
       email_lc: email,
-
       status: Number(data?.status) || 1,
       zone: data?.zone ?? [],
       agents: data?.agents ?? [],     // if you keep this array for something else
@@ -101,9 +111,9 @@ export async function createCompany(data) {
       loginCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-       phone_number:data?.phone_number,
-      last_name:data?.last_name,
-      first_name:data?.first_name,
+      phone_number: data?.phone_number,
+      last_name: data?.last_name,
+      first_name: data?.first_name,
     },
     { merge: false }
   );
@@ -186,12 +196,6 @@ export async function bumpCompanyLogin(uid, email) {
   });
 }
 
-function formatCompanyId(value) {
-  // Accept "1", 1, "LLP000001" -> always return "LLP000001"
-  const digits = String(value || "").replace(/\D/g, ""); // strip non-digits
-  if (!digits) return null;
-  return `LLP${digits.padStart(6, "0")}`;
-}
 
 
 export function listenCompanies(params, cb) {
@@ -232,20 +236,14 @@ export function listenCompanies(params, cb) {
     companiesById = {};
     snap.docs.forEach((d) => {
       const id = d.id;
-      const data = d.data();
-
-      const valueToFormat = formatFromField ? data?.[formatFromField] : id;
-      const companyIdFormatted = formatCompanyId(valueToFormat);
-
 
       companiesById[id] = {
         id,
-        companyIdFormatted,
         _snap: d,
         ...d.data(),
         agents: [],
-        agentCount: 0,
-        zonesCount: 0,
+        // agentCount: 0,
+        // zonesCount: 0,
       };
       currentIds.add(id);
     });
@@ -313,21 +311,199 @@ export function listenCompanies(params, cb) {
 //   return `LLP${digits.padStart(6, "0")}`;
 // }
 
+function nonEmptyString(v) {
+  return typeof v === "string" && v.trim() !== "";
+}
+// export function listenCompanies1(params, cb) {
+
+//   console.log(params.search);
+
+
+//   const agentField = params?.agentField || "company_Id";
+//   const zonesCompanyField = params?.zonesCompanyField || "company_Id";
+//   const relatedUsesFormattedId = !!params?.relatedUsesFormattedId; // default false
+
+//   const colRef = collection(db, "companies");
+//   const constraints = [];
+
+//   if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
+
+
+//   if (typeof params?.zone === "number") constraints.push(where("zone", "==", params.zone));
+//   if (params?.limitBy) constraints.push(qLimit(params.limitBy));
+//   if (nonEmptyString(params?.search)) {
+//     const s = params.search.trim().toLowerCase();
+//     // company_name_lc OR email equals the search value
+//     constraints.push(
+//       or(
+//         where("company_name_lc", "==", s),
+//         where("email", "==", s)
+//       )
+//     );
+//   }
+
+
+//   const qRef = query(colRef, ...constraints);
+
+//   const agentUnsubsByCompany = new Map();
+//   const zonesUnsubsByCompany = new Map();
+//   let companiesById = {};
+
+//   const emit = () => cb(Object.values(companiesById));
+
+//   const unsubCompanies = onSnapshot(qRef, (snap) => {
+//     const currentIds = new Set();
+//     companiesById = {};
+
+//     snap.docs.forEach((d) => {
+//       const id = d.id;
+//       const data = d.data();
+
+//       // Decide the source value to format:
+//       // - If you keep a numeric sequence in the doc (e.g., data.sequence = 1), prefer that
+//       // - Else fall back to the doc id (digits inside will be used)
+//       // const valueToFormat = formatFromField ? data?.[formatFromField] : id;
+//       // // const companyIdFormatted = formatCompanyId(valueToFormat);
+
+//       companiesById[id] = {
+//         id,                   // raw Firestore doc id
+//         // companyIdFormatted,   // "LLP000001"
+//         _snap: d,
+//         ...data,
+//         agents: [],
+//         agentCount: 0,
+//         zonesCount: 0,
+//       };
+//       currentIds.add(id);
+//     });
+
+//     // cleanup listeners
+//     for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
+//       if (!currentIds.has(companyId)) { try { fn(); } catch { } agentUnsubsByCompany.delete(companyId); }
+//     }
+//     for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
+//       if (!currentIds.has(companyId)) { try { fn(); } catch { } zonesUnsubsByCompany.delete(companyId); }
+//     }
+
+//     // wire per-company listeners
+//     for (const companyId of currentIds) {
+//       const company = companiesById[companyId];
+//       const keyForRelated = relatedUsesFormattedId ? company.companyIdFormatted : companyId;
+
+//       if (!agentUnsubsByCompany.has(companyId)) {
+//         const agentsQ = query(
+//           collection(db, "agents"),
+//           where(agentField, "==", keyForRelated)
+//         );
+//         const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
+//           const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
+//           if (companiesById[companyId]) {
+//             companiesById[companyId].agents = agents;
+//             companiesById[companyId].agentCount = agents.length;
+//             emit();
+//           }
+//         });
+//         agentUnsubsByCompany.set(companyId, unsubAgents);
+//       }
+
+//       if (!zonesUnsubsByCompany.has(companyId)) {
+//         const zonesQ = query(
+//           collection(db, "zones"),
+//           where(zonesCompanyField, "==", keyForRelated)
+//         );
+//         const unsubZones = onSnapshot(zonesQ, (zoneSnap) => {
+//           if (companiesById[companyId]) {
+//             companiesById[companyId].zonesCount = zoneSnap.size;
+//             emit();
+//           }
+//         });
+//         zonesUnsubsByCompany.set(companyId, unsubZones);
+//       }
+//     }
+
+//     emit();
+//   });
+
+//   return () => {
+//     try { unsubCompanies(); } catch {
+//       console.error('Some error')
+//     }
+//     for (const fn of agentUnsubsByCompany.values()) {
+//       try { fn(); } catch {
+//         console.error('Some error')
+//       }
+//     }
+//     for (const fn of zonesUnsubsByCompany.values()) {
+//       try { fn(); } catch {
+//         console.error('Some error')
+//       }
+//     }
+//     agentUnsubsByCompany.clear();
+//     zonesUnsubsByCompany.clear();
+//   };
+// }
+
+
+/**
+ * Listen to the companies collection with dynamic filters.
+ */
 export function listenCompanies1(params, cb) {
   const agentField = params?.agentField || "company_Id";
   const zonesCompanyField = params?.zonesCompanyField || "company_Id";
-  const relatedUsesFormattedId = !!params?.relatedUsesFormattedId; // default false
-  const formatFromField = params?.formatFromField || null;
+  const relatedUsesFormattedId = !!params?.relatedUsesFormattedId;
 
   const colRef = collection(db, "companies");
-  const constraints = [];
 
-  if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
-  if (typeof params?.zone === "number") constraints.push(where("zone", "==", params.zone));
-  if (params?.limitBy) constraints.push(qLimit(params.limitBy));
+  const filters = [];
+  let queryConstraints = [];
 
-  const qRef = query(colRef, ...constraints);
+  // Add filters
+  if (typeof params?.status === "number") {
+    filters.push(where("status", "==", params.status));
+  }
 
+  if (typeof params?.zone === "number") {
+    filters.push(where("zone", "==", params.zone));
+  }
+
+  if (nonEmptyString(params?.search)) {
+    const s = params.search.trim().toLowerCase();
+
+    // Partial match (prefix search on multiple fields)
+    filters.push(
+      or(
+        and(
+          where("company_name_lc", ">=", s),
+          where("company_name_lc", "<", s + "\uf8ff")
+        ),
+        and(
+          where("unique_id_lc", ">=", s),
+          where("unique_id_lc", "<", s + "\uf8ff")
+        ),
+        and(
+          where("email_lc", ">=", s),
+          where("email_lc", "<", s + "\uf8ff")
+        )
+      )
+    );
+
+  }
+
+  // ✅ Build main query correctly
+  if (filters.length === 1) {
+    queryConstraints.push(filters[0]);
+  } else if (filters.length > 1) {
+    queryConstraints.push(and(...filters));
+  }
+
+  // Add limit *after* the filter
+  if (params?.limitBy) {
+    queryConstraints.push(qLimit(params.limitBy));
+  }
+
+  const qRef = query(colRef, ...queryConstraints);
+
+  // --- Snapshot + subcollection logic ---
   const agentUnsubsByCompany = new Map();
   const zonesUnsubsByCompany = new Map();
   let companiesById = {};
@@ -342,30 +518,31 @@ export function listenCompanies1(params, cb) {
       const id = d.id;
       const data = d.data();
 
-      // Decide the source value to format:
-      // - If you keep a numeric sequence in the doc (e.g., data.sequence = 1), prefer that
-      // - Else fall back to the doc id (digits inside will be used)
-      const valueToFormat = formatFromField ? data?.[formatFromField] : id;
-      const companyIdFormatted = formatCompanyId(valueToFormat);
-
       companiesById[id] = {
-        id,                   // raw Firestore doc id
-        companyIdFormatted,   // "LLP000001"
+        id,
         _snap: d,
         ...data,
         agents: [],
         agentCount: 0,
         zonesCount: 0,
       };
+
       currentIds.add(id);
     });
 
-    // cleanup listeners
+    // cleanup removed listeners
     for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
-      if (!currentIds.has(companyId)) { try { fn(); } catch { } agentUnsubsByCompany.delete(companyId); }
+      if (!currentIds.has(companyId)) {
+        try { fn(); } catch { }
+        agentUnsubsByCompany.delete(companyId);
+      }
     }
+
     for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
-      if (!currentIds.has(companyId)) { try { fn(); } catch { } zonesUnsubsByCompany.delete(companyId); }
+      if (!currentIds.has(companyId)) {
+        try { fn(); } catch { }
+        zonesUnsubsByCompany.delete(companyId);
+      }
     }
 
     // wire per-company listeners
@@ -373,13 +550,18 @@ export function listenCompanies1(params, cb) {
       const company = companiesById[companyId];
       const keyForRelated = relatedUsesFormattedId ? company.companyIdFormatted : companyId;
 
+      // Agents
       if (!agentUnsubsByCompany.has(companyId)) {
         const agentsQ = query(
           collection(db, "agents"),
           where(agentField, "==", keyForRelated)
         );
         const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
-          const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
+          const agents = agentSnap.docs.map((a) => ({
+            id: a.id,
+            _snap: a,
+            ...a.data(),
+          }));
           if (companiesById[companyId]) {
             companiesById[companyId].agents = agents;
             companiesById[companyId].agentCount = agents.length;
@@ -389,6 +571,7 @@ export function listenCompanies1(params, cb) {
         agentUnsubsByCompany.set(companyId, unsubAgents);
       }
 
+      // Zones
       if (!zonesUnsubsByCompany.has(companyId)) {
         const zonesQ = query(
           collection(db, "zones"),
@@ -407,21 +590,36 @@ export function listenCompanies1(params, cb) {
     emit();
   });
 
+  // cleanup function
   return () => {
-    try { unsubCompanies(); } catch {
-      console.error('Some error')
-    }
+    try { unsubCompanies(); } catch { }
     for (const fn of agentUnsubsByCompany.values()) {
-      try { fn(); } catch {
-        console.error('Some error')
-      }
+      try { fn(); } catch { }
     }
     for (const fn of zonesUnsubsByCompany.values()) {
-      try { fn(); } catch {
-        console.error('Some error')
-      }
+      try { fn(); } catch { }
     }
     agentUnsubsByCompany.clear();
     zonesUnsubsByCompany.clear();
   };
+}
+
+
+export async function deleteCompany(companyId) {
+  try {
+    await deleteDoc(doc(db, "companies", companyId));
+
+    const url = "https://leadfirepro.net/api/delete-user";
+    const emailRes = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid: companyId }),
+    });
+    toast.success("Company delete successfully!");
+    return { ok: true, message: `Company ${companyId} deleted successfully`, auth: emailRes };
+  } catch (err) {
+    toast.error(err.message);
+    console.error("Error deleting company:", err);
+    return { ok: false, error: err.message };
+  }
 }

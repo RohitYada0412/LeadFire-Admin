@@ -3,6 +3,7 @@ import {
 	Box,
 	Button,
 	FormControl,
+	IconButton,
 	MenuItem,
 	Paper,
 	Select,
@@ -14,12 +15,15 @@ import {
 	TableContainer,
 	TableHead,
 	TableRow,
+	Tooltip,
 	Typography
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../utils/service';
 import { useNavigate } from 'react-router-dom';
+import { deleteCurrentUser } from '../../FirebaseDB/auth';
+import Iconify from '../common/iconify/Iconify';
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -47,13 +51,10 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 export default function AgentTable({
-	data, setStatus, setCompanyId, setOpen, isUser, page = 1, hasMore = false, onPrev, onNext, loading = false
+	data, setStatus, setCompanyId, setOpen, isUser, page = 1, hasMore = false, onPrev, onNext, setOpenConfirm, loading = false
 }) {
 	const safeRows = Array.isArray(data) ? data : [];
 	const navigate = useNavigate()
-
-console.log('data',data);
-
 
 	return (
 		<Box>
@@ -73,6 +74,7 @@ console.log('data',data);
 						<TableRow>
 							<StyledTableCell>Agent Name</StyledTableCell>
 							<StyledTableCell align="center">Company Email</StyledTableCell>
+							<StyledTableCell align="center">Agent ID</StyledTableCell>
 							<StyledTableCell align="center">Date Added</StyledTableCell>
 							<StyledTableCell align='center'>Status</StyledTableCell>
 							{isUser && <StyledTableCell align="center"></StyledTableCell>}
@@ -97,7 +99,7 @@ console.log('data',data);
 									<StyledTableCell align="center" sx={{ wordBreak: 'break-all' }}>
 										{r.email}
 									</StyledTableCell>
-									{/* <StyledTableCell align="center">{r.zone?.length > 0 ? r.zone.length : 'N/A'}</StyledTableCell> */}
+									<StyledTableCell align="center">{r.unique_id}</StyledTableCell>
 
 									<StyledTableCell align="center">{formatTimestamp(r.createdAt)}</StyledTableCell>
 									<StyledTableCell align='center'>
@@ -113,35 +115,49 @@ console.log('data',data);
 											>
 												<MenuItem value={1}>Active</MenuItem>
 												<MenuItem value={2}>Inactive</MenuItem>
-												{/* <MenuItem value={3}>Pending</MenuItem> */}
 											</Select>
 										</FormControl>
 									</StyledTableCell>
 									{isUser &&
-										<StyledTableCell align="center">
-											<Stack direction='row' justifyContent='center' spacing={2}>
-												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
-													onClick={() => {
-														setOpen(true)
-														setCompanyId(r?.id)
+										<StyledTableCell align="right">
+											<Box display="flex" justifyContent='flex-end' alignItems="center" gap={1}>
+												<Tooltip title="View">
+													<IconButton size="small"
+														onClick={() => {
+															navigate(`/agents/${r?.id}`)
+														}}>
+														<Iconify icon="material-symbols:visibility-outline" />
+													</IconButton>
+												</Tooltip>
 
-														// navigate(`/agents/${r?.id}`)
-													}}
-												>
-													Edit
-												</Button>
-												<Button size="small" variant="contained" color="error" sx={{ borderRadius: 0.5 }}
-													onClick={() => {
-														// setOpen(true)
-														// setCompanyId(r?.id)
+												{/* Edit */}
+												<Tooltip title="Edit">
+													<IconButton size="small"
+														onClick={() => {
+															setOpen(true)
+															setCompanyId(r?.id)
 
-														navigate(`/agents/${r?.id}`)
-													}}
-												>
-													View Detail
-												</Button>
+														}}>
+														<Iconify icon="material-symbols:edit-square-outline" />
+													</IconButton>
+												</Tooltip>
 
-											</Stack>
+												{/* Delete */}
+												<Tooltip title="Delete">
+													<IconButton size="small" color="error"
+														onClick={() => {
+															setOpenConfirm(true)
+															setCompanyId(r?.id)
+															setStatus({})
+														}}
+													>
+														<Iconify icon="material-symbols:delete-outline" />
+													</IconButton>
+												</Tooltip>
+											</Box>
+
+
+
 										</StyledTableCell>}
 								</StyledTableRow>
 							)

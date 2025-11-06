@@ -13,8 +13,11 @@ import {
 
 import { Formik } from "formik";
 import * as Yup from "yup";
+import { toast } from "react-toastify";
+
 import { createCompany, updateCompany } from "../../FirebaseDB/companies";
 import { signUpWithRole } from "../../FirebaseDB/resolveUserContext";
+import { baseurl } from "../../utils/authCall";
 
 const schema = Yup.object({
 	company_name: Yup.string().trim().required("Company Name is required"),
@@ -73,48 +76,52 @@ export default function AddCompanyDialog({
 					try {
 						if (companyId) {
 							await updateCompany(String(companyId), values);
-							setInitialData({})
+							toast.success("Company updated successfully!");
+							setInitialData({});
 						} else {
-
 							let user = await signUpWithRole({
 								email: values?.email,
-								password: values?.temp_password
-							})
+								password: values?.temp_password,
+							});
 
-							values['id'] = user?.uid
-							let res = await createCompany(values)
-							console.log(res);
-
-
+							values["id"] = user?.uid;
+							let res = await createCompany(values);
 
 							if (res !== null) {
 								const emailPayload = {
 									to: values.email,
-									subject: "Verification Mail",
 									code: values?.temp_password,
-									expiryMinutes: 15,
 								};
-								const url = "https://mmfinfotech.co/leadfire-backend/api/send-email";
-								const emailRes = await fetch(url, {
+
+								const url = "send-email";
+								const emailRes = await fetch(baseurl + url, {
 									method: "POST",
 									headers: { "Content-Type": "application/json" },
-									// remove credentials if your endpoint doesn't require cookies/CSRF
-									// credentials: "include",
 									body: JSON.stringify(emailPayload),
 								});
 
-								// optional: surface server error if any
 								if (!emailRes.ok) {
 									let msg = `Email send failed (${emailRes.status})`;
+
+									// try to clean up the just-created user if email fails
+									const uid = user.uid;
+									const delRes = await fetch("https://leadfirepro.net/api/delete-user", {
+										method: "POST",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify({ uid }),
+									});
+
 									try {
-										const data = await emailRes.json();
+										const data = await delRes.json();
 										msg = data?.message || data?.error || msg;
 									} catch (_) {
 										console.error(_);
-
 									}
-									// Not fatal to company creation, but you may want to inform the user:
+
 									console.warn(msg);
+									toast.error("Company created, but failed to send email.");
+								} else {
+									toast.success("Company created successfully!");
 								}
 							}
 						}
@@ -123,6 +130,8 @@ export default function AddCompanyDialog({
 						helpers.setTouched({});
 						handleClose();
 					} catch (err) {
+						console.error(err);
+						toast.error(err?.message || "Failed to create or update company.");
 						helpers.setFieldError("email", err.message || "Failed to create company");
 					} finally {
 						helpers.setSubmitting(false);

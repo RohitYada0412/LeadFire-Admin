@@ -4,6 +4,7 @@ import {
   reauthenticateWithCredential,
   updatePassword
 } from "firebase/auth";
+import { baseurl } from "../utils/authCall";
 
 
 // export async function changePassword(newPassword, currentPassword) {
@@ -59,14 +60,14 @@ import {
 async function sendPasswordChangeEmail(user) {
   if (!user?.email) return { sent: false, message: "No email on user." };
 
-  const url = "https://mmfinfotech.co/leadfire-backend/api/confirmation-mail-password";
+  const url = "confirmation-mail-password";
   const emailPayload = {
     to: user.email,
     uid: user.uid,
   };
 
   try {
-    const emailRes = await fetch(url, {
+    const emailRes = await fetch(baseurl + url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(emailPayload),
@@ -138,4 +139,26 @@ export async function changePassword(newPassword, currentPassword) {
     // Other Firebase errors
     return { ok: false, message: err?.message || "Password update failed.", error: err };
   }
+}
+
+
+export async function deleteCurrentUser(uid) {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  const userRecord = await admin.auth().getUser(uid);
+
+  if (!uid) return { ok: false, message: "No signed-in user." };
+
+  // const uid = user.uid; // 👈 here is the UID
+  console.log("Deleting user with uid:", uid);
+  console.log("Deleting user with uid:", user);
+
+  // try {
+  //   // await deleteUser(user);
+  //   // you can send uid to your backend to clean up related data
+  //   return { ok: true, uid };
+  // } catch (err) {
+  //   return { ok: false, message: "Could not delete account.", error: err };
+  // }
 }
