@@ -15,7 +15,7 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 
-import { createCompany, updateCompany } from "../../FirebaseDB/companies";
+import { createCompany, deleteCompany, updateCompany } from "../../FirebaseDB/companies";
 import { signUpWithRole } from "../../FirebaseDB/resolveUserContext";
 import { baseurl } from "../../utils/authCall";
 
@@ -53,6 +53,7 @@ export default function AddCompanyDialog({
 			maxWidth="xs"
 			fullWidth
 			PaperProps={{ sx: { borderRadius: .8, p: 1 } }}
+			BackdropProps={{ sx: { backgroundColor: "rgba(0,0,0,0.7)" } }}
 		>
 			<DialogTitle
 				sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 0 }}
@@ -101,25 +102,9 @@ export default function AddCompanyDialog({
 								});
 
 								if (!emailRes.ok) {
-									let msg = `Email send failed (${emailRes.status})`;
-
-									// try to clean up the just-created user if email fails
 									const uid = user.uid;
-									const delRes = await fetch("https://leadfirepro.net/api/delete-user", {
-										method: "POST",
-										headers: { "Content-Type": "application/json" },
-										body: JSON.stringify({ uid }),
-									});
-
-									try {
-										const data = await delRes.json();
-										msg = data?.message || data?.error || msg;
-									} catch (_) {
-										console.error(_);
-									}
-
-									console.warn(msg);
-									toast.error("Company created, but failed to send email.");
+									let check = true
+									deleteCompany(uid, check)
 								} else {
 									toast.success("Company created successfully!");
 								}

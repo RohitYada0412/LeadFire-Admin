@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 const TOKEN_KEY = '!Aut#!@';
-const AUTH_KEY  = 'auth'; // compact snapshot we control
+const AUTH_KEY = 'auth'; // compact snapshot we control
 
 const safeParse = (str, fallback = null) => {
   try {
@@ -11,17 +11,17 @@ const safeParse = (str, fallback = null) => {
   }
 };
 
-const token = localStorage.getItem(TOKEN_KEY);
-const persisted = safeParse(localStorage.getItem(AUTH_KEY), null);
+const token = sessionStorage.getItem(TOKEN_KEY);
+const persisted = safeParse(sessionStorage.getItem(AUTH_KEY), null);
 
 const roleFrom = (r) => (r ? String(r).toLowerCase() : null);
 
 // NOTE: keeping `isUser` to match your existing code (it means "isCompany")
 const initialState = {
   isLogin: !!token,
-  user:   persisted?.user ?? null,
-  role:   roleFrom(persisted?.role),
-  token:  token ?? persisted?.token ?? null,
+  user: persisted?.user ?? null,
+  role: roleFrom(persisted?.role),
+  token: token ?? persisted?.token ?? null,
   isUser: roleFrom(persisted?.role) === 'company',
   // optional: clearer alias if you want to use it elsewhere
   isCompany: roleFrom(persisted?.role) === 'company',
@@ -57,7 +57,7 @@ const authSlice = createSlice({
 
       // persist a compact snapshot we can safely rehydrate later
       try {
-        localStorage.setItem(
+        sessionStorage.setItem(
           AUTH_KEY,
           JSON.stringify({
             user: payload,
@@ -66,7 +66,7 @@ const authSlice = createSlice({
           })
         );
         if (payload.token) {
-          localStorage.setItem(TOKEN_KEY, payload.token);
+          sessionStorage.setItem(TOKEN_KEY, payload.token);
         }
       } catch {
         // ignore storage errors
@@ -83,8 +83,8 @@ const authSlice = createSlice({
 
       // Only remove what we set; don't nuke the whole localStorage
       try {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(AUTH_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(AUTH_KEY);
       } catch {
         // ignore storage errors
       }

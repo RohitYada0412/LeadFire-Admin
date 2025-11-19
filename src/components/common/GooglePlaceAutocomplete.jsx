@@ -201,7 +201,7 @@ const GooglePlaceAutocomplete = (props) => {
                   (predictions, status) => {
                     if (
                       status ===
-                        window.google.maps.places.PlacesServiceStatus.OK &&
+                      window.google.maps.places.PlacesServiceStatus.OK &&
                       predictions?.length
                     ) {
                       resolve(predictions);
@@ -260,7 +260,6 @@ const GooglePlaceAutocomplete = (props) => {
         }
       } catch (err) {
         if (!isCancelled) {
-          console.log("Failed to fetch location details", err);
           setOptions([]);
         }
       } finally {

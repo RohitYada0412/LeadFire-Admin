@@ -19,7 +19,7 @@ instance.interceptors.response.use(
   },
   (error) => {
     if (error.response.status === 401) {
-      // localStorage.clear()
+      // sessionStorage.getItemclear()
       window.location.href = "/login";
     } else if (error.response.status) {
       toast.error(error.response?.data?.message);

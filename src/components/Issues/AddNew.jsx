@@ -121,12 +121,8 @@ export default function ZoneDialog({
     }
   }, []);
 
-  const authRaw = localStorage.getItem("auth");
+  const authRaw = sessionStorage.getItem("auth");
   const auth = authRaw ? JSON.parse(authRaw) : null;
-
-  console.log('auth', auth?.user?.role);
-
-
   return (
     <Dialog
       open={open}
@@ -156,13 +152,11 @@ export default function ZoneDialog({
         enableReinitialize
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
-          const authRaw = localStorage.getItem("auth");
+          const authRaw = sessionStorage.getItem("auth");
           const auth = authRaw ? JSON.parse(authRaw) : null;
 
           values['company_name'] = auth?.user?.role
           values['company_Id'] = auth?.user?.uid
-
-          console.log('values', values);
 
           try {
             if (initialData?.id) {

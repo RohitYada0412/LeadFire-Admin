@@ -18,56 +18,155 @@ import {
   where,
   or,
   and,
-  deleteDoc
+  deleteDoc,
+  writeBatch
 } from "firebase/firestore";
 import { getNextSno } from "../utils/firebase-service";
 
 const db = getFirestore();
-
-/** ─────────────────────────────────────────────────────────────
- * Recalculate & update the number of agents belonging to a company
- * (called by agents.js on create/update/delete).
- * ──────────────────────────────────────────────────────────── */
+const DELETE_USER_URL = "https://leadfirepro.net/api/delete-user";
 
 export async function updateCompanyAgentCount(companyId) {
   if (!companyId) return;
 
-  // all agents belonging to this company
-  const q = query(collection(db, "agents"), where("company_Id", "==", companyId));
+  const q = query(
+    collection(db, "agents"),
+    where("company_Id", "==", companyId)
+  );
   const snap = await getDocs(q);
+
+
   const agentTotal = snap.size;
-  const zoneCount = {}; // { [zoneId]: count }
+  const zoneCount = {};
+  const agentIds = [];
+  const zoneSet = new Set();
+  const zoneByAgent = [];
+  const allZones = [];
 
   snap.forEach((docSnap) => {
     const d = docSnap.data() || {};
+    const agentId = docSnap.id;
+    agentIds.push(agentId);
 
-    // normalize to an array of zone ids (handles string, number, array, or missing)
-    const zones = Array.isArray(d.zone)
+    const rawZones = Array.isArray(d.zone)
       ? d.zone
       : d.zone != null
         ? [d.zone]
         : [];
 
-    zones
+    const normalizedZones = rawZones
       .map((z) => String(z).trim())
-      .filter(Boolean)
-      .forEach((zoneId) => {
-        zoneCount[zoneId] = (zoneCount[zoneId] || 0) + 1;
-      });
+      .filter(Boolean);
+
+    // per-agent zones
+    zoneByAgent.push({
+      agentId,
+      zones: normalizedZones,
+    });
+    allZones.push(...normalizedZones);
+
+    normalizedZones.forEach((zoneId) => {
+      zoneCount[zoneId] = (zoneCount[zoneId] || 0) + 1;
+      zoneSet.add(zoneId);
+    });
   });
 
+  const zones = Array.from(zoneSet);
 
   await updateDoc(doc(db, "companies", companyId), {
     agent_count: agentTotal,
-    zone_count: zoneCount,          // <-- per-zone map, not a single number
+    agent_ids: agentIds,
+
+    // unique zones
+    zone: zones,
+    zonesCount: zones.length,
+
+    // saare zones (duplicate allowed)
+    allZones,            // <<-- yeh tum direct UI me use kar sakte ho
+    totalZones: allZones.length,
+
+    // per-zone count
+    zone_count: zoneCount,
+
+    // legacy field sync
+    agentCount: agentTotal,
+
     updatedAt: serverTimestamp(),
   });
 }
 
 
+export async function deleteAgents(agentIds) {
+  if (!Array.isArray(agentIds) || agentIds.length === 0) {
+    throw new Error("agentIds is required and must be a non-empty array.");
+  }
+
+  // set of companies whose counts we need to refresh
+  const companyIds = new Set();
+  const batch = writeBatch(db);
+
+  // 2. load each agent once to get its company_Id and add delete to batch
+  await Promise.all(
+    agentIds.map(async (agentId) => {
+      const refDoc = doc(db, "agents", String(agentId));
+      const snap = await getDoc(refDoc);
+
+      if (!snap.exists()) return;
+
+      const data = snap.data() || {};
+      const companyId = data.company_Id;
+
+      if (companyId) {
+        companyIds.add(String(companyId));
+      }
+
+      batch.delete(refDoc);
+    })
+  );
+
+  // 3. commit Firestore deletes
+  await batch.commit();
+
+  // 4. call external delete-user API for each agent
+  await Promise.all(
+    agentIds.map((agentId) =>
+      fetch(DELETE_USER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: agentId }),
+      })
+    )
+  );
+
+  // 5. recompute counts/ids for all affected companies
+  await Promise.all(
+    Array.from(companyIds).map((companyId) =>
+      updateCompanyAgentCount(companyId)
+    )
+  );
+
+  toast.success("Agents deleted successfully!");
+}
 
 
-/** Create company with provided UID as doc id */
+export async function deleteZones(zoneIds) {
+  if (!Array.isArray(zoneIds) || zoneIds.length === 0) {
+    throw new Error("zoneIds must be a non-empty array.");
+  }
+
+  const batch = writeBatch(db);
+
+  zoneIds.forEach((zoneId) => {
+    const ref = doc(db, "zones", String(zoneId));
+    batch.delete(ref);
+  });
+
+  await batch.commit();
+
+  // optional toast if you're using react-toastify etc.
+  // toast.success("Zones deleted successfully!");
+}
+
 export async function createCompany(data) {
   const company_name = String(data?.company_name || "").trim();
   const email = String(data?.email || "").trim().toLowerCase();
@@ -102,8 +201,8 @@ export async function createCompany(data) {
       email_lc: email,
       status: Number(data?.status) || 1,
       zone: data?.zone ?? [],
-      agents: data?.agents ?? [],     // if you keep this array for something else
-      agent_count: 0,                 // initialize counter
+      agents: data?.agents ?? [],
+      agent_count: 0,
       displayId: data?.displayId ?? null,
       user_name: data?.user_name ?? null,
       user_type: data?.user_type ?? "company",
@@ -121,7 +220,6 @@ export async function createCompany(data) {
   return uid;
 }
 
-/** Default paged list (no search) */
 export async function fetchCompaniesPage({ lastDoc = null, pageSize = 25, status, zone } = {}) {
   let qRef = query(collection(db, "companies"));
   if (status) qRef = query(qRef, where("status", "==", status));
@@ -136,7 +234,6 @@ export async function fetchCompaniesPage({ lastDoc = null, pageSize = 25, status
   };
 }
 
-/** Update */
 export async function updateCompany(companyId, patch) {
   await updateDoc(doc(db, "companies", companyId), {
     ...patch,
@@ -148,7 +245,6 @@ export async function getCompanyById(companyId) {
   const ref = doc(db, "companies", companyId);
   const snap = await getDoc(ref);
   if (snap.exists()) return { id: snap.id, ...snap.data() };
-  console.log("No such company!");
   return null;
 }
 
@@ -314,139 +410,7 @@ export function listenCompanies(params, cb) {
 function nonEmptyString(v) {
   return typeof v === "string" && v.trim() !== "";
 }
-// export function listenCompanies1(params, cb) {
 
-//   console.log(params.search);
-
-
-//   const agentField = params?.agentField || "company_Id";
-//   const zonesCompanyField = params?.zonesCompanyField || "company_Id";
-//   const relatedUsesFormattedId = !!params?.relatedUsesFormattedId; // default false
-
-//   const colRef = collection(db, "companies");
-//   const constraints = [];
-
-//   if (typeof params?.status === "number") constraints.push(where("status", "==", params.status));
-
-
-//   if (typeof params?.zone === "number") constraints.push(where("zone", "==", params.zone));
-//   if (params?.limitBy) constraints.push(qLimit(params.limitBy));
-//   if (nonEmptyString(params?.search)) {
-//     const s = params.search.trim().toLowerCase();
-//     // company_name_lc OR email equals the search value
-//     constraints.push(
-//       or(
-//         where("company_name_lc", "==", s),
-//         where("email", "==", s)
-//       )
-//     );
-//   }
-
-
-//   const qRef = query(colRef, ...constraints);
-
-//   const agentUnsubsByCompany = new Map();
-//   const zonesUnsubsByCompany = new Map();
-//   let companiesById = {};
-
-//   const emit = () => cb(Object.values(companiesById));
-
-//   const unsubCompanies = onSnapshot(qRef, (snap) => {
-//     const currentIds = new Set();
-//     companiesById = {};
-
-//     snap.docs.forEach((d) => {
-//       const id = d.id;
-//       const data = d.data();
-
-//       // Decide the source value to format:
-//       // - If you keep a numeric sequence in the doc (e.g., data.sequence = 1), prefer that
-//       // - Else fall back to the doc id (digits inside will be used)
-//       // const valueToFormat = formatFromField ? data?.[formatFromField] : id;
-//       // // const companyIdFormatted = formatCompanyId(valueToFormat);
-
-//       companiesById[id] = {
-//         id,                   // raw Firestore doc id
-//         // companyIdFormatted,   // "LLP000001"
-//         _snap: d,
-//         ...data,
-//         agents: [],
-//         agentCount: 0,
-//         zonesCount: 0,
-//       };
-//       currentIds.add(id);
-//     });
-
-//     // cleanup listeners
-//     for (const [companyId, fn] of agentUnsubsByCompany.entries()) {
-//       if (!currentIds.has(companyId)) { try { fn(); } catch { } agentUnsubsByCompany.delete(companyId); }
-//     }
-//     for (const [companyId, fn] of zonesUnsubsByCompany.entries()) {
-//       if (!currentIds.has(companyId)) { try { fn(); } catch { } zonesUnsubsByCompany.delete(companyId); }
-//     }
-
-//     // wire per-company listeners
-//     for (const companyId of currentIds) {
-//       const company = companiesById[companyId];
-//       const keyForRelated = relatedUsesFormattedId ? company.companyIdFormatted : companyId;
-
-//       if (!agentUnsubsByCompany.has(companyId)) {
-//         const agentsQ = query(
-//           collection(db, "agents"),
-//           where(agentField, "==", keyForRelated)
-//         );
-//         const unsubAgents = onSnapshot(agentsQ, (agentSnap) => {
-//           const agents = agentSnap.docs.map((a) => ({ id: a.id, _snap: a, ...a.data() }));
-//           if (companiesById[companyId]) {
-//             companiesById[companyId].agents = agents;
-//             companiesById[companyId].agentCount = agents.length;
-//             emit();
-//           }
-//         });
-//         agentUnsubsByCompany.set(companyId, unsubAgents);
-//       }
-
-//       if (!zonesUnsubsByCompany.has(companyId)) {
-//         const zonesQ = query(
-//           collection(db, "zones"),
-//           where(zonesCompanyField, "==", keyForRelated)
-//         );
-//         const unsubZones = onSnapshot(zonesQ, (zoneSnap) => {
-//           if (companiesById[companyId]) {
-//             companiesById[companyId].zonesCount = zoneSnap.size;
-//             emit();
-//           }
-//         });
-//         zonesUnsubsByCompany.set(companyId, unsubZones);
-//       }
-//     }
-
-//     emit();
-//   });
-
-//   return () => {
-//     try { unsubCompanies(); } catch {
-//       console.error('Some error')
-//     }
-//     for (const fn of agentUnsubsByCompany.values()) {
-//       try { fn(); } catch {
-//         console.error('Some error')
-//       }
-//     }
-//     for (const fn of zonesUnsubsByCompany.values()) {
-//       try { fn(); } catch {
-//         console.error('Some error')
-//       }
-//     }
-//     agentUnsubsByCompany.clear();
-//     zonesUnsubsByCompany.clear();
-//   };
-// }
-
-
-/**
- * Listen to the companies collection with dynamic filters.
- */
 export function listenCompanies1(params, cb) {
   const agentField = params?.agentField || "company_Id";
   const zonesCompanyField = params?.zonesCompanyField || "company_Id";
@@ -605,7 +569,7 @@ export function listenCompanies1(params, cb) {
 }
 
 
-export async function deleteCompany(companyId) {
+export async function deleteCompany(companyId, check = false) {
   try {
     await deleteDoc(doc(db, "companies", companyId));
 
@@ -615,7 +579,10 @@ export async function deleteCompany(companyId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: companyId }),
     });
-    toast.success("Company delete successfully!");
+    if (!check) {
+      toast.success("Company delete successfully!");
+
+    }
     return { ok: true, message: `Company ${companyId} deleted successfully`, auth: emailRes };
   } catch (err) {
     toast.error(err.message);

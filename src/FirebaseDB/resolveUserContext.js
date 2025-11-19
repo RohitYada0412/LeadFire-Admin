@@ -25,10 +25,10 @@ import { auth } from "../firebase";
  */
 const norm = (r) =>
   typeof r === "string" ? r.toLowerCase()
-  : r === 1 ? "admin"
-  : r === 2 ? "company"
-  : r === 3 ? "agent"
-  : "unknown";
+    : r === 1 ? "admin"
+      : r === 2 ? "company"
+        : r === 3 ? "agent"
+          : "unknown";
 
 /**
  * Reads users/{uid} and returns { role, profile }
@@ -39,11 +39,6 @@ export async function resolveUserContext({ uid }) {
   if (!usnap.exists()) return { role: "company", profile: null };
   const data = usnap.data();
   const role = norm(data.role ?? data.user_type);
-
-console.log('role',role);
-
-
-
   return { role, profile: { id: usnap.id, ...data, role } };
 }
 

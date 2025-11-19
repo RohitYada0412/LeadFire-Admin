@@ -73,7 +73,7 @@ export default function AgentTable({
 					<TableHead>
 						<TableRow>
 							<StyledTableCell>Agent Name</StyledTableCell>
-							<StyledTableCell align="center">Company Email</StyledTableCell>
+							<StyledTableCell align="center">Email</StyledTableCell>
 							<StyledTableCell align="center">Agent ID</StyledTableCell>
 							<StyledTableCell align="center">Date Added</StyledTableCell>
 							<StyledTableCell align='center'>Status</StyledTableCell>

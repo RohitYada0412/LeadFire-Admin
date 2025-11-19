@@ -167,22 +167,21 @@ export default function ZoneDialog({
         </IconButton>
 
       </DialogTitle>
-
       <Formik
         initialValues={defaults}
         enableReinitialize
 
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
-          const authRaw = localStorage.getItem("auth");
+          const authRaw = sessionStorage.getItem("auth");
           const auth = authRaw ? JSON.parse(authRaw) : null;
 
           values['company_name'] = auth?.user?.role
           values['company_Id'] = auth?.user?.uid
 
           try {
-            if (initialData?.id) {
-              await updateZone(initialData.id, values);
+            if (companyId) {
+              await updateZone(companyId, values);
               toast.success("Zone updated successfully!");
             } else {
               await createZone(values);

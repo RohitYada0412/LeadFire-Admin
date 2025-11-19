@@ -114,30 +114,6 @@ export async function createAgent(data) {
   // 4) Write
   await setDoc(agentRef, payload);
 
-  // 5) Upload photo (optional)
-  if (isFileLike(data?.photo)) {
-    try {
-      const ext = pickExt(data.photo);
-      const path = `agents/${uid}/avatar_${Date.now()}.${ext}`;
-      const fileRef = ref(storage, path);
-      await uploadBytes(fileRef, data.photo, {
-        contentType: data.photo.type || `image/${ext}`,
-      });
-      const url = await getDownloadURL(fileRef);
-      await updateDoc(agentRef, {
-        photoURL: url,
-        photoPath: path,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (e) {
-      const msg = (e && e.code === "storage/unauthorized")
-        ? "You don't have permission to upload to Storage. Are you signed in and do your rules allow write to agents/*?"
-        : (e?.message || "Failed to upload photo");
-      throw new Error(msg);
-    }
-  }
-
-  // 6) Update company count
   if (payload.company_Id) {
     await updateCompanyAgentCount(payload.company_Id);
   }
@@ -194,8 +170,9 @@ export async function updateAgent(agentId, data) {
     patch.photoPath = path;
 
     if (data?.oldPhotoPath) {
-      try { await deleteObject(ref(storage, data.oldPhotoPath)); } catch (err) {
-        console.log("delete old photo error:", err);
+      try { await deleteObject(ref(storage, data.oldPhotoPath)); }
+      catch (err) {
+        toast.error(err)
       }
     }
   }
@@ -237,8 +214,6 @@ export async function deleteAgent(agentId) {
     await updateCompanyAgentCount(companyId);
   }
 }
-
-
 
 export function listAgents(params = {}, onData, onError, cursor = null) {
   const colRef = collection(getFirestore() || db, "agents");
@@ -385,7 +360,7 @@ export async function getAgentWithObservations(agentId) {
   const agentRef = doc(db, "agents", agentId);
   const agentSnap = await getDoc(agentRef);
   if (!agentSnap.exists()) {
-    console.log("No such agent!");
+    toast.error("No such agent!")
     return null;
   }
   const agent = { id: agentSnap.id, ...agentSnap.data() };

@@ -10,6 +10,7 @@ import {
 import AdminOverview from '../components/charts/AdminOverview';
 import TabelComponent from '../components/common/Tabel';
 import { agents } from '../utils/service';
+import { companyEmailExists } from '../FirebaseDB/auth';
 
 const StatCard = ({ label, value, actionIcon }) => (
   <Card
@@ -37,11 +38,14 @@ const StatCard = ({ label, value, actionIcon }) => (
 
 export default function Dashboard() {
 
-  const { role } = JSON.parse(localStorage.getItem("auth"));
-
+  const { role } = JSON.parse(sessionStorage.getItem("auth"));
 
   // ----------------- COMPANY VIEW -------------------
   if (role === "company") {
+
+
+
+
     return (
       <Stack spacing={3} sx={{ p: 3 }}>
 

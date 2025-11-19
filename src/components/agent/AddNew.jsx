@@ -15,6 +15,7 @@ import { deleteOwnAccount, signUpWithRole } from "../../FirebaseDB/resolveUserCo
 import { useEffect } from "react";
 import { getCompanyById } from "../../FirebaseDB/companies";
 import { baseurl } from "../../utils/authCall";
+import { toast } from "react-toastify";
 
 const phoneYup = Yup.string()
   .trim()
@@ -44,6 +45,7 @@ export default function AddCompanyDialog({
   setCompanyId,
   companyData,
 }) {
+
   const handleClosePop = () => {
     setInitialData({
       agent_name: "",
@@ -63,7 +65,7 @@ export default function AddCompanyDialog({
     handleClose();
   };
 
-  const role = localStorage.getItem('auth')
+  const role = sessionStorage.getItem('auth')
 
 
   useEffect(() => {
@@ -107,27 +109,34 @@ export default function AddCompanyDialog({
         }}
         validationSchema={schema}
         onSubmit={async (values, helpers) => {
-          values['company_id'] = JSON.parse(role).user.uid
-          values['agent_name'] = values.first_name + " " + values.last_name
+          values["company_id"] = JSON.parse(role).user.uid;
+          values["agent_name"] = values.first_name + " " + values.last_name;
+
           try {
             if (companyId) {
+              // 🔹 UPDATE AGENT
               await updateAgent(String(companyId), values);
-            } else {
 
+              // ✅ Success message for update
+              toast.success("Agent updated successfully");
+            } else {
+              // 🔹 CREATE AGENT
               try {
                 let user = await signUpWithRole({
                   email: values?.email,
-                  password: values?.temp_password
-                })
+                  password: values?.temp_password,
+                });
 
-                values['id'] = user?.uid
-                let res = await createAgent(values)
+                values["id"] = user?.uid;
+                let res = await createAgent(values);
+
                 if (res !== null) {
+                  // ✅ Agent successfully created (DB side)
+                  toast.success("Agent created successfully");
+
                   const emailPayload = {
                     to: values.email,
-                    // subject: "Verification Mail",
                     code: values?.temp_password,
-                    // expiryMinutes: 15,
                   };
 
                   const url = "send-email-agent";
@@ -140,32 +149,40 @@ export default function AddCompanyDialog({
                   // optional: surface server error if any
                   if (!emailRes.ok) {
                     let msg = `Email send failed (${emailRes.status})`;
+
                     try {
                       const data = await emailRes.json();
                       msg = data?.message || data?.error || msg;
                     } catch (_) {
                       console.error(_);
-
                     }
-                    // Not fatal to company creation, but you may want to inform the user:
+
                     console.warn(msg);
+                    // ⚠️ Inform user: agent create ho gaya, email fail hua
+                    toast.warn("Agent created, but email sending failed");
                   }
                 }
-
               } catch (error) {
-                console.log('error', error);
+                // signup / createAgent me kuch gadbad ho gayi
+                // rollback user creation
+                await deleteOwnAccount({
+                  email: values?.email,
+                  password: values?.temp_password,
+                });
 
-                await deleteOwnAccount({ email: values?.email, password: values?.temp_password })
-
+                // optional: error toast
+                toast.error("Failed to create agent");
+                throw error; // upar wale catch tak propagate karne ke liye
               }
-
-
             }
+
+            // ✅ Form clean-up
             helpers.resetForm();
             helpers.setTouched({});
             handleClosePop();
           } catch (err) {
             const msg = err?.message || "Failed to save agent";
+
             // route storage-related errors to photo field
             if (/storage\//i.test(err?.code || "") || /storage/i.test(msg)) {
               helpers.setFieldError("photo", msg);
@@ -176,6 +193,7 @@ export default function AddCompanyDialog({
             helpers.setSubmitting(false);
           }
         }}
+
       >
         {({ handleSubmit, values, getFieldProps, touched, errors, isSubmitting, setFieldValue }) => (
           <>
@@ -277,45 +295,6 @@ export default function AddCompanyDialog({
                   )}
                 </Stack>
 
-                {/* <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Zone</Typography>
-                  <Autocomplete
-                    multiple
-                    disableCloseOnSelect
-                    options={(zoneData || []).filter((z) => z.status === 1)}
-                    getOptionLabel={(opt) => opt?.zone_name ?? ""}
-                    isOptionEqualToValue={(o, v) => o?.id === v?.id}
-                    // Form value is an array of IDs
-                    value={(values.zone || [])
-                      .map((id) => (zoneData || []).find((z) => z.id === id))
-                      .filter(Boolean)}
-                    onChange={(_, selected) => {
-                      const ids = selected.map((z) => z.id);
-                      setFieldValue("zone", ids);
-                    }}
-                    filterSelectedOptions
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Zone"
-                        placeholder="Search or select zones…"
-                      />
-                    )}
-                  />
-                </Stack> */}
-
-                {/* <Stack>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>Temporary Password</Typography>
-                  <TextField
-                    placeholder="Enter Temporary Password"
-                    type="text"
-                    fullWidth
-                    {...getFieldProps("temp_password")}
-                    error={touched.temp_password && Boolean(errors.temp_password)}
-                    helperText={touched.temp_password && errors.temp_password}
-                    disabled
-                  />
-                </Stack> */}
               </Stack>
             </DialogContent>
 

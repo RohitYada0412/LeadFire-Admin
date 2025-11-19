@@ -21,7 +21,7 @@ const RESEND_COOLDOWN = 30;
 export default function VerifyEmail() {
   const navigate = useNavigate();
 
-  let loacl = localStorage.getItem("user-auth")
+  let loacl = sessionStorage.getItem("user-auth")
 
   // store target end time in a ref; compute secondsLeft from it
   const endAtRef = useRef(Date.now() + VERIFY_WINDOW_SECONDS * 1000);
@@ -138,10 +138,12 @@ export default function VerifyEmail() {
         return;
       }
 
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/login`, // redirect after email verification
-        handleCodeInApp: false,
-      });
+      await sendEmailVerification(user,
+        //   {
+        //   url: `${window.location.origin}/login`, // redirect after email verification
+        //   handleCodeInApp: false,
+        // }
+      );
 
       toast.info(`Verification link sent to ${user.email}`);
 

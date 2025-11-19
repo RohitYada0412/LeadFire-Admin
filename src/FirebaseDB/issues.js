@@ -159,9 +159,6 @@ export function listIssues(params, onData, onError, cursor = null) {
           const aid = getAgentId(o);
           const agent = aid ? agentsMap[aid] ?? null : null;
 
-          // console.log('agent', agent);
-
-
           return {
             ...o,
             agent,                              // full agent object

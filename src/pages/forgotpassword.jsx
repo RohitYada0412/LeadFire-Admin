@@ -10,6 +10,7 @@ import { fetchSignInMethodsForEmail, sendPasswordResetEmail } from 'firebase/aut
 
 import { auth } from '../firebase';
 import { imageURL } from '../utils/images';
+import { companyEmailExists } from '../FirebaseDB/auth';
 
 const schema = Yup.object({
 	email: Yup.string().email('Enter a valid email').required('Email is required'),
@@ -56,33 +57,39 @@ export default function ForgotPassword() {
 									<Formik
 										initialValues={{ email: '' }}
 										validationSchema={schema}
-										onSubmit={async ({ email }, { setSubmitting, resetForm }) => {
-											try {
-												// 1. Check if email exists / has sign-in methods
-												const methods = await fetchSignInMethodsForEmail(auth, email);
 
-												if (methods.length === 0) {
-													toast.error('No account found with this email.');
-													return; // don't call sendPasswordResetEmail
+										onSubmit={async ({ email }, { setSubmitting, resetForm }) => {
+											const ADMIN_EMAIL = "admin@leadfirepro.net"
+											try {
+												const normalizedEmail = email.trim().toLowerCase();
+
+												// 1. Check if email belongs to a company OR is the admin
+												const isAdmin = normalizedEmail === ADMIN_EMAIL;
+												const companyExists = await companyEmailExists(normalizedEmail);
+
+												const allowed = isAdmin || companyExists;
+
+												if (allowed) {
+													await sendPasswordResetEmail(auth, normalizedEmail, {
+														url: `${window.location.origin}/login`,
+														handleCodeInApp: false,
+													});
+													toast.success("Password reset link sent to your email.");
+												} else {
+													toast.error("No company with this email yet");
 												}
 
-												// 2. Email exists -> send reset link
-												await sendPasswordResetEmail(auth, email, {
-													url: `${window.location.origin}/reset-password`,
-													handleCodeInApp: false,
-												});
-
-												toast.success('Password reset link sent to your email.');
 												resetForm();
 											} catch (err) {
 												const msg = err?.code
-													? err.code.replace('auth/', '').replace(/-/g, ' ')
+													? err.code.replace("auth/", "").replace(/-/g, " ")
 													: err?.message;
-												toast.error(msg || 'Failed to send reset email');
+												toast.error(msg || "Failed to send reset email");
 											} finally {
 												setSubmitting(false);
 											}
 										}}
+
 									>
 										{({ values, errors, touched, handleChange, isSubmitting }) => (
 											<Form>
@@ -121,6 +128,6 @@ export default function ForgotPassword() {
 					</Grid2>
 				</Container>
 			</Box>
-		</React.Fragment>
+		</React.Fragment >
 	);
 }

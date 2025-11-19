@@ -27,10 +27,13 @@ const PAGE_SIZE = 50;
 const Agent = () => {
 	const { isUser } = useSelector((state) => state.auth);
 
+
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [openConfirm, setOpenConfirm] = useState(false);
 	const [status, setStatus] = useState({})
+	const [isDeleting, setIsDeleting] = useState(false);
+
 
 
 	// table rows
@@ -87,7 +90,7 @@ const Agent = () => {
 
 	// build query params
 	const agentParams = useMemo(() => {
-		const authRaw = localStorage.getItem("auth");
+		const authRaw = sessionStorage.getItem("auth");
 		const auth = authRaw ? JSON.parse(authRaw) : null;
 
 		const companyIdFromAuth =
@@ -147,8 +150,6 @@ const Agent = () => {
 			const { rows, firstDoc, lastDoc, hasMore: more } = await listAgents(
 				agentParams,
 				(docs) => {
-					console.log('docs :- ', docs);
-
 					setRows(docs);
 					setLoading(false);
 				},
@@ -180,8 +181,6 @@ const Agent = () => {
 		try {
 			const current = pageCursors[page - 1];
 			const { rows, firstDoc, lastDoc } = await listAgents(agentParams, (docs) => {
-				console.log('docs :- ', docs);
-
 				setRows(docs);
 				setLoading(false);
 			}
@@ -242,6 +241,8 @@ const Agent = () => {
 				)
 			);
 
+			setIsDeleting(true)
+
 			try {
 				await updateAgent(String(status.id), { status: Number(status.nextStatus) });
 			} catch (err) {
@@ -254,6 +255,7 @@ const Agent = () => {
 				);
 			}
 		} else {
+			setIsDeleting(true)
 			// ----- DELETE -----
 			try {
 				await deleteAgent(String(agentId));
@@ -265,6 +267,9 @@ const Agent = () => {
 
 		setAgentId(null);
 		setStatus({});
+		setIsDeleting(false)
+		setOpenConfirm(false)
+
 	};
 
 
@@ -450,6 +455,7 @@ const Agent = () => {
 				message="Are you sure you want to change the status of this agent?"
 				onClose={setOpenConfirm}
 				onConfirm={handleSelectConfirm}
+				loading={isDeleting}
 			/>
 
 

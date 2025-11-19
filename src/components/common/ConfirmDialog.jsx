@@ -8,9 +8,10 @@ import {
   DialogActions,
   Button,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 
-const ConfirmDialog = ({ open, title, message, onClose, onConfirm }) => {
+const ConfirmDialog = ({ open, title, message, onClose, onConfirm, loading }) => {
   return (
     <Dialog
       open={open}
@@ -39,13 +40,23 @@ const ConfirmDialog = ({ open, title, message, onClose, onConfirm }) => {
             Cancel
           </Button>
 
-          <Button
+          {/* <Button
             fullWidth
             onClick={() => { onConfirm(); onClose(false); }}
             variant="contained"
             color="error"
           >
             Confirm
+          </Button> */}
+          <Button
+            onClick={() => { onConfirm() }}
+            fullWidth
+            variant="contained"
+            color="error"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={18} /> : null}
+          >
+            {loading ? "Deleting..." : "Confirm"}
           </Button>
         </Stack>
       </DialogActions>

@@ -39,7 +39,7 @@ const Issues = () => {
 
 
 	const agentParams = useMemo(() => {
-		const authRaw = localStorage.getItem("auth");
+		const authRaw = sessionStorage.getItem("auth");
 		const auth = authRaw ? JSON.parse(authRaw) : null;
 
 		const companyIdFromAuth =

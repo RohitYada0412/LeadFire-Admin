@@ -6,9 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import {
 	Box,
 	Button,
-	Checkbox,
 	Container,
-	FormControlLabel,
 	Grid2,
 	IconButton,
 	InputAdornment,
@@ -23,14 +21,16 @@ import * as Yup from 'yup'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 
-import { browserLocalPersistence, browserSessionPersistence, fetchSignInMethodsForEmail, reload, setPersistence, signInWithEmailAndPassword } from 'firebase/auth'
+import { browserLocalPersistence, browserSessionPersistence, reload, setPersistence, signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { setUser } from '../store/features/auth/authSlice'
 
 import { toast } from "react-toastify"
 import { bumpCompanyLogin } from '../FirebaseDB/companies'
 import { resolveUserContext } from '../FirebaseDB/resolveUserContext'
+import { companyEmailExists } from '../FirebaseDB/auth';
 import { imageURL } from '../utils/images'
+
 
 
 const schema = Yup.object({
@@ -163,11 +163,13 @@ export default function Login() {
 									// setSubmitError(null);
 									try {
 										await setPersistence(auth, values.remember ? browserLocalPersistence : browserSessionPersistence);
-										const { user } = await signInWithEmailAndPassword(auth, values.email, values.password);
+										const { user } = await
+
+											signInWithEmailAndPassword(auth, values.email, values.password);
 										const { role, profile } = await resolveUserContext({ uid: user.uid });
 
-										localStorage.setItem('role', role === 'company' ? true : false)
-										localStorage.setItem('user-auth', JSON.stringify(user))
+										sessionStorage.setItem('role', role === 'company' ? true : false)
+										sessionStorage.setItem('user-auth', JSON.stringify(user))
 
 										// if (user.metadata.creationTime === user.metadata.lastSignInTime) {
 										// 	console.log('New User ');
@@ -180,13 +182,20 @@ export default function Login() {
 
 										// 	await bumpCompanyLogin(user.uid, user.email || values.email);
 
-										// 	localStorage.setItem('!Aut#!@', user.accessToken)
+										// 	sessionStorage.setItem('!Aut#!@', user.accessToken)
 										// 	navigate("/dashboard", { replace: true });
 
 										// } else {
+										const ADMIN_EMAIL = "admin@leadfirepro.net"
 
-										console.log('exiting User ');
-										if (role == "admin" || role == "company") {
+										const normalizedEmail = values.email.trim().toLowerCase();
+
+										// 1. Check if email belongs to a company OR is the admin
+										const isAdmin = normalizedEmail === ADMIN_EMAIL;
+										const companyExists = await companyEmailExists(normalizedEmail);
+
+										const allowed = isAdmin || companyExists;
+										if (allowed) {
 											if (role == "company") {
 												const user1 = auth.currentUser;
 												if (!user) return false;
@@ -213,7 +222,7 @@ export default function Login() {
 														token: user.accessToken
 													}))
 													toast.success('Login successfully!')
-													localStorage.setItem('!Aut#!@', user.accessToken)
+													sessionStorage.setItem('!Aut#!@', user.accessToken)
 													navigate("/dashboard", { replace: true });
 
 												} else {
@@ -228,9 +237,11 @@ export default function Login() {
 
 												await bumpCompanyLogin(user.uid, user.email || values.email);
 
-												localStorage.setItem('!Aut#!@', user.accessToken)
+												sessionStorage.setItem('!Aut#!@', user.accessToken)
 												navigate("/dashboard", { replace: true });
 											}
+										} else {
+											toast.error('Your login credentials are not recognized. Please check your email and password, then try again.')
 										}
 
 										// }
@@ -294,7 +305,7 @@ export default function Login() {
 											</Box>
 
 											<Stack direction='row' justifyContent='space-between' alignItems='center'>
-												<FormControlLabel
+												{/* <FormControlLabel
 													control={
 														<Checkbox
 															name="remember"
@@ -305,7 +316,7 @@ export default function Login() {
 													}
 													label="Remember me"
 													sx={{ color: 'text.secondary' }}
-												/>
+												/> */}
 
 												<Box sx={{ cursor: 'pointer' }} onClick={() => navigate('/forgot-password')}>
 													<Typography variant='body1' color='text.secondary'>Forgot Password?</Typography>

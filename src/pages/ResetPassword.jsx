@@ -47,6 +47,8 @@ export default function ResetPassword() {
 		// const 
 		try {
 			const res = await changePassword(values.password, values.confirmPassword);
+			console.log("email error", res);
+
 			if (res.ok) {
 				window.location.href = '/'
 				console.log("Password updated successfully.")
@@ -225,7 +227,7 @@ export default function ResetPassword() {
 													/>
 												</Box>
 
-												<FormControlLabel
+												{/* <FormControlLabel
 													control={
 														<Checkbox
 															name="remember"
@@ -236,7 +238,7 @@ export default function ResetPassword() {
 													}
 													label="Remember me"
 													sx={{ color: "text.secondary" }}
-												/>
+												/> */}
 
 												<Button
 													type="submit"

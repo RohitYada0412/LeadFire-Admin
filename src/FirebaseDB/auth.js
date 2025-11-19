@@ -6,6 +6,10 @@ import {
 } from "firebase/auth";
 import { baseurl } from "../utils/authCall";
 
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+
+const db = getFirestore();
+
 
 // export async function changePassword(newPassword, currentPassword) {
 //   const auth = getAuth();
@@ -63,7 +67,7 @@ async function sendPasswordChangeEmail(user) {
   const url = "confirmation-mail-password";
   const emailPayload = {
     to: user.email,
-    uid: user.uid,
+    code: user.uid,
   };
 
   try {
@@ -151,8 +155,7 @@ export async function deleteCurrentUser(uid) {
   if (!uid) return { ok: false, message: "No signed-in user." };
 
   // const uid = user.uid; // 👈 here is the UID
-  console.log("Deleting user with uid:", uid);
-  console.log("Deleting user with uid:", user);
+
 
   // try {
   //   // await deleteUser(user);
@@ -161,4 +164,32 @@ export async function deleteCurrentUser(uid) {
   // } catch (err) {
   //   return { ok: false, message: "Could not delete account.", error: err };
   // }
+}
+
+
+// export async function companyEmailExists(email) {
+//   const companiesRef = collection(db, "companies");
+//   const q = query(companiesRef, where("email", "==", email));
+
+//   // console.log(q);
+
+
+//   const snap = await getDocs(q);
+//   console.log('snap', snap);
+
+
+//   return !snap.empty;
+// }
+
+export async function companyEmailExists(email) {
+  const companiesRef = collection(db, "companies");
+
+  const q = query(
+    companiesRef,
+    where("email", "==", email),
+    where("status", "==", 1)
+  );
+
+  const snap = await getDocs(q);
+  return !snap.empty;
 }

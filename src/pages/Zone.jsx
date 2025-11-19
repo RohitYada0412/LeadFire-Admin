@@ -49,7 +49,7 @@ const Zone = () => {
 
 
 	const agentParams = useMemo(() => {
-		const authRaw = localStorage.getItem("auth");
+		const authRaw = sessionStorage.getItem("auth");
 		const auth = authRaw ? JSON.parse(authRaw) : null;
 
 		const companyIdFromAuth =
@@ -101,13 +101,18 @@ const Zone = () => {
 
 		setRows(prev => prev.map(r => (r.id === id ? { ...r, status: nextStatus } : r)));
 
+		console.log('id', status);
+
+
 		try {
-			await updateZoneStatus(String(id), nextStatus);
+			await updateZoneStatus(status);
 		} catch (err) {
 			console.error("Failed to update company:", err);
 			setRows(prev => prev.map(r => (r.id === id ? { ...r, status: prevStatus } : r)));
 		} finally {
 			console.log('final');
+			setStatus({})
+			setOpenConfirm(null)
 
 		}
 	};
@@ -160,10 +165,6 @@ const Zone = () => {
 			cancelled = true;
 		};
 	}, [agentParams]);
-
-	console.log('rows :- ', rows);
-
-
 	return (
 		<React.Fragment>
 			<Grid2 container spacing={2} className='mb-2' alignItems="center">
@@ -210,7 +211,7 @@ const Zone = () => {
 									}));
 								}}
 							>
-								<MenuItem value={0} disabled>
+								<MenuItem value={0}>
 									All
 								</MenuItem>
 								<MenuItem value={1}>Assigned</MenuItem>

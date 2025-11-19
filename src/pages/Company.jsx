@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Iconify from "../components/common/iconify/Iconify";
 import AddCompanyDialog from "../components/company/AddNew";
 import ResponsiveCompanyTable from "../components/company/CompanyComponent";
-import { deleteCompany, getCompanyById, listenCompanies1, updateCompany } from "../FirebaseDB/companies";
+import { deleteAgents, deleteCompany, deleteZones, getCompanyById, listenCompanies1, updateCompany } from "../FirebaseDB/companies";
 import { generateTempPassword } from "../utils/password";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 
@@ -13,6 +13,8 @@ const Company = () => {
 	const [rows, setRows] = useState([])
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [openConfirm, setOpenConfirm] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
+
 
 
 	const [filterData, setFilterData] = useState({
@@ -30,14 +32,14 @@ const Company = () => {
 		last_name: '',
 		phone_number: ''
 	})
-	const [companyId, setCompanyId] = useState('')
+	const [companyId, setCompanyId] = useState(null)
 	const handleClickOpen = () => setOpen(true);
 
 	const PAGE_SIZE = 50;
 
 
 	const agentParams = useMemo(() => {
-		const authRaw = localStorage.getItem("auth");
+		const authRaw = sessionStorage.getItem("auth");
 		const auth = authRaw ? JSON.parse(authRaw) : null;
 
 		const companyIdFromAuth =
@@ -46,7 +48,6 @@ const Company = () => {
 				: null;
 
 		const p = { limitBy: PAGE_SIZE };
-
 
 		if (companyIdFromAuth) p.company_id = companyIdFromAuth;
 
@@ -112,9 +113,48 @@ const Company = () => {
 		}
 	}, [companyId, open])
 
-	const handleSelectConfirm = (id) => {
-		deleteCompany(companyId)
-	}
+	// const handleSelectConfirm = async (id) => {
+	// 	rows?.find((item) => item.id === companyId)
+
+	// 	let agent_id = rows?.find((item) => item.id === companyId)
+
+	// 	console.log('agent_id', agent_id);
+
+	// 	await deleteCompany(companyId)
+	// 	await deleteAgents(agent_id)
+
+
+
+	// 	setCompanyId(null)
+	// }
+
+	const handleSelectConfirm = async () => {
+		if (!companyId) return;
+
+		setIsDeleting(true);
+		try {
+			const companyRow = rows?.find((item) => item.id === companyId);
+
+			const agentIds = companyRow?.agent_ids || [];
+			const zoneIds = companyRow?.zone || [];
+
+			if (agentIds.length > 0) {
+				await deleteAgents(agentIds);
+			}
+			if (zoneIds.length > 0) {
+				await deleteZones(zoneIds);
+			}
+			await deleteCompany(companyId);
+
+		} catch (err) {
+			console.error("delete flow failed", err);
+			toast.error("Something went wrong while deleting company");
+		} finally {
+			setCompanyId(null);
+			setIsDeleting(false)
+			setOpenConfirm(false)
+		}
+	};
 
 	return (
 		<React.Fragment>
@@ -218,9 +258,8 @@ const Company = () => {
 				message="Are you sure you want to permanently delete company?"
 				onClose={setOpenConfirm}
 				onConfirm={handleSelectConfirm}
+				loading={isDeleting}
 			/>
-
-
 		</React.Fragment>
 	)
 }

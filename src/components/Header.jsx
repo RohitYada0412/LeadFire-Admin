@@ -44,7 +44,7 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 const Header = ({ open, setOpen }) => {
   const location = useLocation();
 
-  const auth = JSON.parse(localStorage.getItem('auth'))
+  const auth = JSON.parse(sessionStorage.getItem('auth'))
 
   const headingList = [
     { path: '/', label: "Dashboard" },
@@ -54,9 +54,6 @@ const Header = ({ open, setOpen }) => {
   const headingContent = filter(headingList, (item) => {
     return item.path === location.pathname;
   });
-
-  // console.log('profile', profile);
-
 
   return (
     <>
